@@ -462,10 +462,12 @@ function Dashboard({ players, setPlayers, regOpen, timeLeft, serverOnline }) {
               </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-              <div className={`db-badge ${serverOnline ? "" : "error"}`}>
-                <div className={`db-dot ${serverOnline ? "" : "error"}`} />
-                {serverOnline ? "💾 players.json" : "⚠ SERVER OFFLINE"}
-              </div>
+              {!serverOnline && (
+                <div className="db-badge error">
+                  <div className="db-dot error" />
+                  ⚠ SERVER OFFLINE
+                </div>
+              )}
               <div style={{ textAlign: "right" }}>
                 <div style={{ fontSize: 9, color: "#5a7080", fontFamily: "'Orbitron',monospace", letterSpacing: 2 }}>{regOpen ? "REG CLOSES IN" : "REGISTRATION"}</div>
                 <div style={{ fontFamily: "'Orbitron',monospace", fontSize: 12, color: regOpen ? "#C8A84B" : "#f87171", fontWeight: 700 }} className={regOpen ? "pulse" : ""}>{timeLeft}</div>
