@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 
 const REGISTRATION_DEADLINE = new Date("2026-03-15T23:59:59");
-const API = "http://localhost:3001";
+
+// ── Backend API on Render — update this with your Render URL ──
+const API = "https://pubg-tournament-api.onrender.com";
 
 const TEAM_CODENAMES = [
   "Iron Wolves","Shadow Vipers","Ghost Reapers","Steel Phantoms","Death Ravens",
