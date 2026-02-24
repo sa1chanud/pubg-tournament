@@ -5,6 +5,9 @@ const REGISTRATION_DEADLINE = new Date("2026-03-15T23:59:59");
 // ── Backend API on Render — update this with your Render URL ──
 const API = "https://pubg-tournament-api.onrender.com";
 
+// ── Change this to your own secret admin password ──
+const ADMIN_PASSWORD = "pubg@admin2026";
+
 const TEAM_CODENAMES = [
   "Iron Wolves","Shadow Vipers","Ghost Reapers","Steel Phantoms","Death Ravens",
   "Dark Hunters","Neon Jackals","Crimson Hawks","Void Stalkers","Blood Eagles",
@@ -414,6 +417,8 @@ function Dashboard({ players, setPlayers, regOpen, timeLeft, serverOnline }) {
   const [showRegModal, setShowRegModal] = useState(false);
   const [showConfirmGen, setShowConfirmGen] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
 
   const preview = getPreview(players.length);
 
@@ -501,8 +506,12 @@ function Dashboard({ players, setPlayers, regOpen, timeLeft, serverOnline }) {
                 <div style={{ fontSize: 12, color: "#5a7080", marginTop: 4 }}>Saved permanently to players.json on your PC</div>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                {players.length > 0 && (
-                  <button className="danger-btn" style={{ fontSize: 9, padding: "6px 14px" }} onClick={() => setShowClearConfirm(true)}>🗑 CLEAR ALL</button>
+                {isAdmin ? (
+                  players.length > 0 && (
+                    <button className="danger-btn" style={{ fontSize: 9, padding: "6px 14px" }} onClick={() => setShowClearConfirm(true)}>🗑 CLEAR ALL</button>
+                  )
+                ) : (
+                  <button className="close-btn" style={{ fontSize: 9, padding: "6px 14px" }} onClick={() => setShowAdminLogin(true)}>🔐 ADMIN</button>
                 )}
                 <div style={{ fontFamily: "'Orbitron',monospace", fontSize: 32, fontWeight: 900, color: "#C8A84B" }}>{players.length}</div>
               </div>
@@ -698,6 +707,54 @@ function Dashboard({ players, setPlayers, regOpen, timeLeft, serverOnline }) {
           </div>
         </div>
       )}
+
+      {showAdminLogin && (
+        <AdminLoginModal
+          onClose={() => setShowAdminLogin(false)}
+          onSuccess={() => setIsAdmin(true)}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// ADMIN LOGIN MODAL
+// ─────────────────────────────────────────────
+function AdminLoginModal({ onClose, onSuccess }) {
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  const submit = () => {
+    if (password === ADMIN_PASSWORD) {
+      onSuccess();
+      onClose();
+    } else {
+      setError("Incorrect password.");
+      setPassword("");
+    }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="confirm-modal slide-in" style={{ border: "1px solid #C8A84B55" }}>
+        <div style={{ fontFamily: "'Orbitron',monospace", fontSize: 13, fontWeight: 900, color: "#C8A84B", letterSpacing: 3, marginBottom: 6 }}>🔐 ADMIN ACCESS</div>
+        <div style={{ fontSize: 12, color: "#5a7080", marginBottom: 20 }}>Enter admin password to unlock controls.</div>
+        <input
+          className="input-field"
+          type="password"
+          placeholder="Enter admin password"
+          value={password}
+          autoFocus
+          onChange={e => { setPassword(e.target.value); setError(""); }}
+          onKeyDown={e => e.key === "Enter" && submit()}
+        />
+        {error && <div className="error-text" style={{ marginTop: 8 }}>⚠ {error}</div>}
+        <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
+          <button className="reg-btn" style={{ flex: 1 }} onClick={submit}>UNLOCK</button>
+          <button className="close-btn" style={{ flex: 1 }} onClick={onClose}>CANCEL</button>
+        </div>
+      </div>
     </div>
   );
 }
