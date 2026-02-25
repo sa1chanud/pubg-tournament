@@ -755,7 +755,7 @@ function Dashboard({ players, setPlayers, regOpen, timeLeft, serverOnline }) {
                 ) : (
                   <button className="btn-ghost" onClick={() => setShowAdminLogin(true)}>🔐 Admin</button>
                 )}
-                {players.length >= 3 && (
+                {isAdmin && players.length >= 3 && (
                   <button className="btn-outline" onClick={() => setShowGen(true)}>⚡ Pick Teams</button>
                 )}
               </div>
@@ -764,7 +764,7 @@ function Dashboard({ players, setPlayers, regOpen, timeLeft, serverOnline }) {
             {players.length > 0 && (
               <div className="notice" style={{ marginBottom: 16, fontSize: 13, color: "#718096" }}>
                 Teams are randomly assigned after the <strong style={{ color: "#F5A623" }}>March 15, 2026</strong> deadline.
-                {players.length >= 3 && <> Preview anytime using <strong style={{ color: "#F5A623" }}>Pick Teams</strong>.</>}
+                {isAdmin && players.length >= 3 && <> Use <strong style={{ color: "#F5A623" }}>Pick Teams</strong> to preview team assignments.</>}
                 {isAdmin && <> As admin, <strong style={{ color: "#F5A623" }}>tap any row</strong> to edit or delete that player.</>}
               </div>
             )}
