@@ -1153,44 +1153,7 @@ function Dashboard({ players, setPlayers, regOpen, timeLeft, serverOnline }) {
               })
             )}
 
-            {/* Edit / Add Modal */}
-            {editingMatch && (
-              <ScheduleEditModal
-                match={editingMatch === "new" ? null : editingMatch}
-                saving={schedSaving}
-                error={schedError}
-                onSave={async (form) => {
-                  setSchedSaving(true); setSchedError("");
-                  try {
-                    if (editingMatch === "new") {
-                      const created = await apiAddSchedule(form);
-                      setSchedule(s => [...s, created]);
-                    } else {
-                      const updated = await apiUpdateSchedule(editingMatch.id, form);
-                      setSchedule(s => s.map(x => x.id === updated.id ? updated : x));
-                    }
-                    setEditingMatch(null);
-                  } catch (e) { setSchedError(e.message); }
-                  setSchedSaving(false);
-                }}
-                onClose={() => setEditingMatch(null)}
-              />
-            )}
 
-            {/* Admin password gate for schedule actions */}
-            {schedAdminPending && (
-              <ScheduleAdminGate
-                onSuccess={() => {
-                  setIsAdmin(true);
-                  const { action, match } = schedAdminPending;
-                  setSchedAdminPending(null);
-                  if (action === "add") { setEditingMatch("new"); setSchedError(""); }
-                  else if (action === "edit") { setEditingMatch(match); setSchedError(""); }
-                  else if (action === "delete") { handleSchedDelete(match); }
-                }}
-                onClose={() => setSchedAdminPending(null)}
-              />
-            )}
           </div>
         )}
 
@@ -1267,6 +1230,44 @@ function Dashboard({ players, setPlayers, regOpen, timeLeft, serverOnline }) {
       )}
 
       {showAdminLogin && <AdminLoginModal onClose={() => setShowAdminLogin(false)} onSuccess={() => setIsAdmin(true)} />}
+
+      {/* Schedule modals - rendered at root level for proper overlay */}
+      {editingMatch && (
+        <ScheduleEditModal
+          match={editingMatch === "new" ? null : editingMatch}
+          saving={schedSaving}
+          error={schedError}
+          onSave={async (form) => {
+            setSchedSaving(true); setSchedError("");
+            try {
+              if (editingMatch === "new") {
+                const created = await apiAddSchedule(form);
+                setSchedule(s => [...s, created]);
+              } else {
+                const updated = await apiUpdateSchedule(editingMatch.id, form);
+                setSchedule(s => s.map(x => x.id === updated.id ? updated : x));
+              }
+              setEditingMatch(null);
+            } catch (e) { setSchedError(e.message); }
+            setSchedSaving(false);
+          }}
+          onClose={() => setEditingMatch(null)}
+        />
+      )}
+
+      {schedAdminPending && (
+        <ScheduleAdminGate
+          onSuccess={() => {
+            setIsAdmin(true);
+            const { action, match } = schedAdminPending;
+            setSchedAdminPending(null);
+            if (action === "add") { setEditingMatch("new"); setSchedError(""); }
+            else if (action === "edit") { setEditingMatch(match); setSchedError(""); }
+            else if (action === "delete") { handleSchedDelete(match); }
+          }}
+          onClose={() => setSchedAdminPending(null)}
+        />
+      )}
 
       {editingPlayer && (
         <EditPlayerModal
