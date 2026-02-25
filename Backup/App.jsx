@@ -74,6 +74,22 @@ async function apiClearPlayers() {
   if (!res.ok) throw new Error("Failed to clear");
 }
 
+async function apiUpdatePlayer(id, player) {
+  const res = await fetch(`${API}/players/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(player),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to update");
+  return data;
+}
+
+async function apiDeletePlayer(id) {
+  const res = await fetch(`${API}/players/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to delete player");
+}
+
 // ─────────────────────────────────────────────
 // STYLES — mobile-first
 // ─────────────────────────────────────────────
@@ -423,8 +439,22 @@ function LandingPage({ onEnter, onRegister, players, regOpen, deadline }) {
       </div>
 
       {/* Footer */}
-      <div style={{ borderTop: "1px solid #1E2533", padding: "16px", textAlign: "center" }}>
+      <div style={{ borderTop: "1px solid #1E2533", padding: "16px 16px 20px", textAlign: "center" }}>
         <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: "#2D3748", letterSpacing: 2 }}>BATTLEGROUND PUBG TOURNAMENT · 2026</span>
+        <div style={{ marginTop: 12, display: "flex", justifyContent: "center", gap: 16, flexWrap: "wrap" }}>
+          <a
+            href="mailto:saichandu.janga5@gmail.com?subject=Feedback%20%2F%20Suggestion%20-%20PUBG%20Tournament&body=Hi%2C%0A%0AI%20have%20the%20following%20feedback%20or%20suggestion%3A%0A%0A"
+            style={{ fontFamily: "'Barlow Condensed'", fontSize: 12, color: "#F5A623", letterSpacing: 1, textDecoration: "none", borderBottom: "1px solid #F5A62355", paddingBottom: 1 }}
+          >
+            💬 FEEDBACK / SUGGESTIONS
+          </a>
+          <a
+            href="mailto:saichandu.janga5@gmail.com?subject=Contact%20Admin%20-%20PUBG%20Tournament&body=Hi%20Admin%2C%0A%0A"
+            style={{ fontFamily: "'Barlow Condensed'", fontSize: 12, color: "#A0AEC0", letterSpacing: 1, textDecoration: "none", borderBottom: "1px solid #A0AEC055", paddingBottom: 1 }}
+          >
+            📧 CONTACT ADMIN
+          </a>
+        </div>
       </div>
     </div>
   );
@@ -509,6 +539,113 @@ function RegModal({ players, onClose, onSuccess }) {
 }
 
 // ─────────────────────────────────────────────
+// EDIT PLAYER MODAL (admin only)
+// ─────────────────────────────────────────────
+function EditPlayerModal({ player, onClose, onSave, onDelete }) {
+  const [form, setForm] = useState({
+    username: player.username || "",
+    pubgId: player.pubgId || "",
+    fullName: player.fullName || "",
+    email: player.email || "",
+    phone: player.phone || "",
+    experience: player.experience || "beginner",
+  });
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [error, setError] = useState("");
+
+  const save = async () => {
+    if (!form.username.trim()) { setError("Username is required."); return; }
+    if (!form.fullName.trim()) { setError("Full name is required."); return; }
+    if (!form.email.trim() || !form.email.includes("@")) { setError("Valid email is required."); return; }
+    setSaving(true);
+    try {
+      const updated = await apiUpdatePlayer(player.id, form);
+      onSave(updated);
+      onClose();
+    } catch (e) { setError(e.message); }
+    finally { setSaving(false); }
+  };
+
+  const del = async () => {
+    setDeleting(true);
+    try {
+      await apiDeletePlayer(player.id);
+      onDelete(player.id);
+      onClose();
+    } catch (e) { setError(e.message); }
+    finally { setDeleting(false); }
+  };
+
+  return (
+    <div className="overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal-sheet slide-up">
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <div>
+            <div className="heading" style={{ fontSize: 18, color: "#F5A623" }}>EDIT PLAYER</div>
+            <div style={{ fontSize: 12, color: "#4A5568", marginTop: 2 }}>Admin · Editing {player.username}</div>
+          </div>
+          <button className="btn-ghost" style={{ padding: "6px 10px", fontSize: 14 }} onClick={onClose}>✕</button>
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <label className="field-label">PUBG Username *</label>
+          <input className="field-input" value={form.username} onChange={e => { setForm({ ...form, username: e.target.value }); setError(""); }} />
+        </div>
+        <div style={{ marginBottom: 16 }}>
+          <label className="field-label">PUBG ID <span style={{ color: "#2D3748", fontSize: 10 }}>(optional)</span></label>
+          <input className="field-input" value={form.pubgId} onChange={e => setForm({ ...form, pubgId: e.target.value })} />
+        </div>
+        <div style={{ marginBottom: 16 }}>
+          <label className="field-label">Full Name *</label>
+          <input className="field-input" value={form.fullName} onChange={e => { setForm({ ...form, fullName: e.target.value }); setError(""); }} />
+        </div>
+        <div style={{ marginBottom: 16 }}>
+          <label className="field-label">Email *</label>
+          <input className="field-input" type="email" value={form.email} onChange={e => { setForm({ ...form, email: e.target.value }); setError(""); }} />
+        </div>
+        <div style={{ marginBottom: 16 }}>
+          <label className="field-label">Phone <span style={{ color: "#2D3748", fontSize: 10 }}>(optional)</span></label>
+          <input className="field-input" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
+        </div>
+        <div style={{ marginBottom: 20 }}>
+          <label className="field-label">Experience Level</label>
+          <select className="field-input" value={form.experience} onChange={e => setForm({ ...form, experience: e.target.value })} style={{ background: "#141720", cursor: "pointer" }}>
+            <option value="beginner">🟢 Beginner</option>
+            <option value="intermediate">🟡 Intermediate</option>
+            <option value="advanced">🟠 Advanced</option>
+            <option value="pro">🔴 Pro</option>
+          </select>
+        </div>
+
+        {error && <div className="error-msg" style={{ marginBottom: 14 }}>⚠ {error}</div>}
+
+        <button className="btn-primary" style={{ fontSize: 14, padding: "13px", marginBottom: 10 }} onClick={save} disabled={saving}>
+          {saving ? <><span className="spinner" /> SAVING...</> : "SAVE CHANGES"}
+        </button>
+
+        {!confirmDelete ? (
+          <button className="btn-danger" style={{ width: "100%", padding: "11px", justifyContent: "center" }} onClick={() => setConfirmDelete(true)}>
+            🗑 DELETE THIS PLAYER
+          </button>
+        ) : (
+          <div style={{ background: "rgba(252,129,129,.08)", border: "1px solid rgba(252,129,129,.3)", padding: "14px", marginTop: 4 }}>
+            <div style={{ fontSize: 13, color: "#FC8181", marginBottom: 12 }}>Are you sure? This cannot be undone.</div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button className="btn-danger" style={{ flex: 1, padding: "10px" }} onClick={del} disabled={deleting}>
+                {deleting ? "DELETING..." : "YES, DELETE"}
+              </button>
+              <button className="btn-ghost" style={{ flex: 1, padding: "10px" }} onClick={() => setConfirmDelete(false)}>CANCEL</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
 // ADMIN LOGIN MODAL
 // ─────────────────────────────────────────────
 function AdminLoginModal({ onClose, onSuccess }) {
@@ -539,6 +676,56 @@ function AdminLoginModal({ onClose, onSuccess }) {
 }
 
 // ─────────────────────────────────────────────
+// GENERATE TEAMS MODAL (admin password gate)
+// ─────────────────────────────────────────────
+function GenTeamsModal({ players, preview, teamsReady, isAdmin, onConfirm, onClose }) {
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [authed, setAuthed] = useState(isAdmin);
+
+  const unlock = () => {
+    if (password === ADMIN_PASSWORD) { setAuthed(true); setError(""); }
+    else { setError("Incorrect password."); setPassword(""); }
+  };
+
+  return (
+    <div className="overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="confirm-sheet slide-up" style={{ border: "1.5px solid rgba(245,166,35,.3)" }}>
+        <div className="heading" style={{ fontSize: 16, color: "#F5A623", marginBottom: 8 }}>⚡ GENERATE TEAMS</div>
+
+        {!authed ? (
+          <>
+            <p style={{ fontSize: 13, color: "#4A5568", marginBottom: 18 }}>Enter admin password to generate teams.</p>
+            <input className="field-input" type="password" placeholder="Admin password" value={password} autoFocus
+              onChange={e => { setPassword(e.target.value); setError(""); }}
+              onKeyDown={e => e.key === "Enter" && unlock()} />
+            {error && <div className="error-msg">⚠ {error}</div>}
+            <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
+              <button className="btn-primary" style={{ flex: 1, padding: "12px" }} onClick={unlock}>UNLOCK</button>
+              <button className="btn-ghost" style={{ flex: 1, padding: "12px" }} onClick={onClose}>CANCEL</button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p style={{ fontSize: 13, color: "#718096", lineHeight: 1.7, marginBottom: 6 }}>
+              Randomly assign <strong style={{ color: "#E2E8F0" }}>{players.length} players</strong> into squads.
+            </p>
+            {preview && <p style={{ fontSize: 13, color: "#F5A623", marginBottom: 16 }}>
+              {preview.fours > 0 ? `${preview.fours} squad${preview.fours !== 1 ? "s" : ""} of 4` : ""}{preview.fours > 0 && preview.threes > 0 ? " + " : ""}{preview.threes > 0 ? `${preview.threes} squad${preview.threes !== 1 ? "s" : ""} of 3` : ""}
+            </p>}
+            {teamsReady && <p style={{ fontSize: 12, color: "#FC8181", marginBottom: 14 }}>⚠ This overwrites the current draw.</p>}
+            <div style={{ display: "flex", gap: 10 }}>
+              <button className="btn-primary" style={{ flex: 1, padding: "12px" }} onClick={onConfirm}>CONFIRM</button>
+              <button className="btn-ghost" style={{ flex: 1, padding: "12px" }} onClick={onClose}>CANCEL</button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
 // DASHBOARD
 // ─────────────────────────────────────────────
 function Dashboard({ players, setPlayers, regOpen, timeLeft, serverOnline }) {
@@ -550,6 +737,7 @@ function Dashboard({ players, setPlayers, regOpen, timeLeft, serverOnline }) {
   const [showClear, setShowClear] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
+  const [editingPlayer, setEditingPlayer] = useState(null);
 
   const preview = getPreview(players.length);
 
@@ -631,7 +819,7 @@ function Dashboard({ players, setPlayers, regOpen, timeLeft, serverOnline }) {
                 ) : (
                   <button className="btn-ghost" onClick={() => setShowAdminLogin(true)}>🔐 Admin</button>
                 )}
-                {players.length >= 3 && (
+                {isAdmin && players.length >= 3 && (
                   <button className="btn-outline" onClick={() => setShowGen(true)}>⚡ Pick Teams</button>
                 )}
               </div>
@@ -640,7 +828,8 @@ function Dashboard({ players, setPlayers, regOpen, timeLeft, serverOnline }) {
             {players.length > 0 && (
               <div className="notice" style={{ marginBottom: 16, fontSize: 13, color: "#718096" }}>
                 Teams are randomly assigned after the <strong style={{ color: "#F5A623" }}>March 15, 2026</strong> deadline.
-                {players.length >= 3 && <> Preview anytime using <strong style={{ color: "#F5A623" }}>Pick Teams</strong>.</>}
+                {isAdmin && players.length >= 3 && <> Use <strong style={{ color: "#F5A623" }}>Pick Teams</strong> to preview team assignments.</>}
+                {isAdmin && <> As admin, <strong style={{ color: "#F5A623" }}>tap any row</strong> to edit or delete that player.</>}
               </div>
             )}
 
@@ -653,7 +842,7 @@ function Dashboard({ players, setPlayers, regOpen, timeLeft, serverOnline }) {
                 <span className="ptable-col-date" style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: "#4A5568", letterSpacing: 2 }}>DATE</span>
               </div>
               {players.map((p, i) => (
-                <div key={p.id} className="ptable-row player-row">
+                <div key={p.id} className="ptable-row player-row" style={{ cursor: isAdmin ? "pointer" : "default" }} onClick={() => isAdmin && setEditingPlayer(p)}>
                   <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 12, color: "#4A5568" }}>#{i + 1}</div>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
                     <div style={{ width: 32, height: 32, borderRadius: "50%", background: `hsl(${(p.username.charCodeAt(0) * 37) % 360},30%,20%)`, border: `1.5px solid hsl(${(p.username.charCodeAt(0) * 37) % 360},30%,32%)`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#F5A623", flexShrink: 0 }}>
@@ -664,10 +853,13 @@ function Dashboard({ players, setPlayers, regOpen, timeLeft, serverOnline }) {
                       {p.fullName && <div style={{ fontSize: 11, color: "#4A5568", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.fullName}</div>}
                     </div>
                   </div>
-                  <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <span style={{ padding: "2px 8px", fontSize: 10, fontFamily: "'Barlow Condensed'", fontWeight: 700, background: expBg[p.experience], color: expColor[p.experience] }}>
                       {p.experience?.toUpperCase()}
                     </span>
+                    {isAdmin && (
+                      <span style={{ fontSize: 11, color: "#4A5568", opacity: 0.6 }}>✏️</span>
+                    )}
                   </div>
                   <div className="ptable-col-email" style={{ fontSize: 11, color: "#4A5568", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.email}</div>
                   <div className="ptable-col-date" style={{ fontSize: 11, color: "#4A5568", fontFamily: "'Barlow Condensed'" }}>{p.registeredAt}</div>
@@ -806,22 +998,14 @@ function Dashboard({ players, setPlayers, regOpen, timeLeft, serverOnline }) {
       {showReg && <RegModal players={players} onClose={() => setShowReg(false)} onSuccess={p => { setPlayers(prev => [...prev, p]); setShowReg(false); }} />}
 
       {showGen && (
-        <div className="overlay" onClick={e => e.target === e.currentTarget && setShowGen(false)}>
-          <div className="confirm-sheet slide-up" style={{ border: "1.5px solid rgba(245,166,35,.3)" }}>
-            <div className="heading" style={{ fontSize: 16, color: "#F5A623", marginBottom: 8 }}>⚡ GENERATE TEAMS</div>
-            <p style={{ fontSize: 13, color: "#718096", lineHeight: 1.7, marginBottom: 6 }}>
-              Randomly assign <strong style={{ color: "#E2E8F0" }}>{players.length} players</strong> into squads.
-            </p>
-            {preview && <p style={{ fontSize: 13, color: "#F5A623", marginBottom: 16 }}>
-              {preview.fours > 0 ? `${preview.fours} squad${preview.fours !== 1 ? "s" : ""} of 4` : ""}{preview.fours > 0 && preview.threes > 0 ? " + " : ""}{preview.threes > 0 ? `${preview.threes} squad${preview.threes !== 1 ? "s" : ""} of 3` : ""}
-            </p>}
-            {teamsReady && <p style={{ fontSize: 12, color: "#FC8181", marginBottom: 14 }}>⚠ This overwrites the current draw.</p>}
-            <div style={{ display: "flex", gap: 10 }}>
-              <button className="btn-primary" style={{ flex: 1, padding: "12px" }} onClick={genTeams}>CONFIRM</button>
-              <button className="btn-ghost" style={{ flex: 1, padding: "12px" }} onClick={() => setShowGen(false)}>CANCEL</button>
-            </div>
-          </div>
-        </div>
+        <GenTeamsModal
+          players={players}
+          preview={preview}
+          teamsReady={teamsReady}
+          isAdmin={isAdmin}
+          onConfirm={() => { genTeams(); setIsAdmin(true); }}
+          onClose={() => setShowGen(false)}
+        />
       )}
 
       {showClear && (
@@ -841,6 +1025,15 @@ function Dashboard({ players, setPlayers, regOpen, timeLeft, serverOnline }) {
       )}
 
       {showAdminLogin && <AdminLoginModal onClose={() => setShowAdminLogin(false)} onSuccess={() => setIsAdmin(true)} />}
+
+      {editingPlayer && (
+        <EditPlayerModal
+          player={editingPlayer}
+          onClose={() => setEditingPlayer(null)}
+          onSave={updated => setPlayers(prev => prev.map(p => p.id === updated.id ? updated : p))}
+          onDelete={id => setPlayers(prev => prev.filter(p => p.id !== id))}
+        />
+      )}
     </div>
   );
 }

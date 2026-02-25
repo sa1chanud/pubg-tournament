@@ -90,6 +90,39 @@ async function apiDeletePlayer(id) {
   if (!res.ok) throw new Error("Failed to delete player");
 }
 
+async function apiLoadSchedule() {
+  const res = await fetch(`${API}/schedule`);
+  if (!res.ok) throw new Error("Failed to load schedule");
+  return res.json();
+}
+
+async function apiAddSchedule(entry) {
+  const res = await fetch(`${API}/schedule`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(entry),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to save");
+  return data;
+}
+
+async function apiUpdateSchedule(id, entry) {
+  const res = await fetch(`${API}/schedule/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(entry),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to update");
+  return data;
+}
+
+async function apiDeleteSchedule(id) {
+  const res = await fetch(`${API}/schedule/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to delete");
+}
+
 // ─────────────────────────────────────────────
 // STYLES — mobile-first
 // ─────────────────────────────────────────────
@@ -676,6 +709,118 @@ function AdminLoginModal({ onClose, onSuccess }) {
 }
 
 // ─────────────────────────────────────────────
+// SCHEDULE EDIT MODAL
+// ─────────────────────────────────────────────
+const MAPS = ["Erangel", "Miramar", "Sanhok", "Vikendi", "Karakin", "Nusa", "Rondo"];
+const STATUSES = ["UPCOMING", "LIVE", "COMPLETED", "CANCELLED"];
+
+// ─────────────────────────────────────────────
+// SCHEDULE ADMIN GATE MODAL
+// ─────────────────────────────────────────────
+function ScheduleAdminGate({ onSuccess, onClose }) {
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  const submit = () => {
+    if (password === ADMIN_PASSWORD) { onSuccess(); }
+    else { setError("Incorrect password."); setPassword(""); }
+  };
+
+  return (
+    <div className="overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="confirm-sheet slide-up" style={{ border: "1.5px solid rgba(245,166,35,.4)" }}>
+        <div className="heading" style={{ fontSize: 16, color: "#F5A623", marginBottom: 6 }}>🔐 ADMIN ACCESS</div>
+        <p style={{ fontSize: 13, color: "#4A5568", marginBottom: 18 }}>Enter admin password to manage the schedule.</p>
+        <input className="field-input" type="password" placeholder="Admin password" value={password} autoFocus
+          onChange={e => { setPassword(e.target.value); setError(""); }}
+          onKeyDown={e => e.key === "Enter" && submit()} />
+        {error && <div className="error-msg">⚠ {error}</div>}
+        <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
+          <button className="btn-primary" style={{ flex: 1, padding: "12px" }} onClick={submit}>UNLOCK</button>
+          <button className="btn-ghost" style={{ flex: 1, padding: "12px" }} onClick={onClose}>CANCEL</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// SCHEDULE EDIT MODAL
+// ─────────────────────────────────────────────
+function ScheduleEditModal({ match, saving, error, onSave, onClose }) {
+  const [form, setForm] = useState({
+    phase: match?.phase || "",
+    date: match?.date || "",
+    time: match?.time || "",
+    map: match?.map || "Erangel",
+    status: match?.status || "UPCOMING",
+    roomId: match?.roomId || "",
+    roomPass: match?.roomPass || "",
+  });
+  const f = (k, v) => setForm(p => ({ ...p, [k]: v }));
+
+  return (
+    <div className="overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="confirm-sheet slide-up" style={{ border: "1.5px solid rgba(245,166,35,.3)", maxWidth: 420, width: "100%" }}>
+        <div className="heading" style={{ fontSize: 16, color: "#F5A623", marginBottom: 16 }}>
+          {match ? "✏ EDIT MATCH" : "＋ ADD MATCH"}
+        </div>
+
+        <label className="field-label">Phase / Round *</label>
+        <input className="field-input" placeholder="e.g. QUALIFIER, SEMI-FINAL" value={form.phase}
+          onChange={e => f("phase", e.target.value)} style={{ marginBottom: 10 }} />
+
+        <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
+          <div style={{ flex: 1 }}>
+            <label className="field-label">Date *</label>
+            <input className="field-input" placeholder="e.g. March 20, 2026" value={form.date}
+              onChange={e => f("date", e.target.value)} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <label className="field-label">Time *</label>
+            <input className="field-input" placeholder="e.g. 18:00 UTC" value={form.time}
+              onChange={e => f("time", e.target.value)} />
+          </div>
+        </div>
+
+        <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
+          <div style={{ flex: 1 }}>
+            <label className="field-label">Map</label>
+            <select className="field-input" value={form.map} onChange={e => f("map", e.target.value)}>
+              {MAPS.map(m => <option key={m} value={m}>{m}</option>)}
+            </select>
+          </div>
+          <div style={{ flex: 1 }}>
+            <label className="field-label">Status</label>
+            <select className="field-input" value={form.status} onChange={e => f("status", e.target.value)}>
+              {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <label className="field-label">Room ID</label>
+        <input className="field-input" placeholder="Optional" value={form.roomId}
+          onChange={e => f("roomId", e.target.value)} style={{ marginBottom: 10 }} />
+
+        <label className="field-label">Room Password</label>
+        <input className="field-input" placeholder="Optional" value={form.roomPass}
+          onChange={e => f("roomPass", e.target.value)} style={{ marginBottom: 10 }} />
+
+        {error && <div className="error-msg" style={{ marginBottom: 10 }}>⚠ {error}</div>}
+
+        <div style={{ display: "flex", gap: 10, marginTop: 6 }}>
+          <button className="btn-primary" style={{ flex: 1, padding: "12px" }} disabled={saving || !form.phase.trim() || !form.date.trim() || !form.time.trim()}
+            onClick={() => onSave(form)}>
+            {saving ? "SAVING..." : "SAVE"}
+          </button>
+          <button className="btn-ghost" style={{ flex: 1, padding: "12px" }} onClick={onClose}>CANCEL</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
 // GENERATE TEAMS MODAL (admin password gate)
 // ─────────────────────────────────────────────
 function GenTeamsModal({ players, preview, teamsReady, isAdmin, onConfirm, onClose }) {
@@ -739,11 +884,43 @@ function Dashboard({ players, setPlayers, regOpen, timeLeft, serverOnline }) {
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState(null);
 
+  // Schedule state
+  const [schedule, setSchedule] = useState([]);
+  const [schedLoading, setSchedLoading] = useState(false);
+  const [editingMatch, setEditingMatch] = useState(null);   // null | "new" | {match object}
+  const [schedSaving, setSchedSaving] = useState(false);
+  const [schedError, setSchedError] = useState("");
+  const [schedAdminPending, setSchedAdminPending] = useState(null); // null | { action: "add"|"edit"|"delete", match? }
+
+  useEffect(() => {
+    if (tab === "schedule") {
+      setSchedLoading(true);
+      apiLoadSchedule().then(data => { setSchedule(data); setSchedLoading(false); }).catch(() => setSchedLoading(false));
+    }
+  }, [tab]);
+
   const preview = getPreview(players.length);
 
   const genTeams = () => {
     setTeams(smartBuildTeams(players.map(p => p.username)));
     setTeamsReady(true); setShowGen(false); setTab("teams");
+  };
+
+  // Schedule admin gate: if already admin, act immediately; otherwise prompt password first
+  const schedAction = (action, match = null) => {
+    if (isAdmin) {
+      if (action === "add") { setEditingMatch("new"); setSchedError(""); }
+      else if (action === "edit") { setEditingMatch(match); setSchedError(""); }
+      else if (action === "delete") { handleSchedDelete(match); }
+    } else {
+      setSchedAdminPending({ action, match });
+    }
+  };
+
+  const handleSchedDelete = async (match) => {
+    if (!confirm("Delete this match?")) return;
+    await apiDeleteSchedule(match.id);
+    setSchedule(s => s.filter(x => x.id !== match.id));
   };
 
   const clearAll = async () => {
@@ -929,26 +1106,91 @@ function Dashboard({ players, setPlayers, regOpen, timeLeft, serverOnline }) {
         {/* ── SCHEDULE TAB ── */}
         {tab === "schedule" && (
           <div className="slide-up">
-            <div className="heading" style={{ fontSize: 22, color: "#E2E8F0", marginBottom: 16 }}>Match Schedule</div>
-
-            <div className="notice" style={{ marginBottom: 20, fontSize: 13, color: "#718096", lineHeight: 1.7 }}>
-              📅 Schedules and room details will be published here before each match day. Check back closer to the tournament date.
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
+              <div className="heading" style={{ fontSize: 22, color: "#E2E8F0" }}>Match Schedule</div>
+              <button className="btn-outline" onClick={() => schedAction("add")}>＋ Add Match</button>
             </div>
 
-            {[
-              { phase: "QUALIFIER", date: "March 20, 2026", time: "18:00 UTC", map: "Erangel", status: "UPCOMING" },
-              { phase: "SEMI-FINAL", date: "March 22, 2026", time: "18:00 UTC", map: "Miramar", status: "UPCOMING" },
-              { phase: "GRAND FINAL", date: "March 25, 2026", time: "18:00 UTC", map: "Erangel", status: "UPCOMING" },
-            ].map((m, i) => (
-              <div key={i} style={{ background: "#111318", border: "1px solid #1E2533", padding: "16px", marginBottom: 10, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
-                <div>
-                  <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: "#4A5568", letterSpacing: 2, marginBottom: 4 }}>{m.phase}</div>
-                  <div className="heading" style={{ fontSize: 16, color: "#E2E8F0" }}>{m.date} · {m.time}</div>
-                  <div style={{ fontSize: 12, color: "#718096", marginTop: 2 }}>Map: {m.map}</div>
+            {schedLoading ? (
+              <div style={{ textAlign: "center", padding: "40px 0", color: "#4A5568", fontFamily: "'Barlow Condensed'", letterSpacing: 2 }}>LOADING...</div>
+            ) : schedule.length === 0 ? (
+              <div className="empty-box">
+                <div style={{ fontSize: 36, marginBottom: 12 }}>📅</div>
+                <div className="heading" style={{ fontSize: 14, letterSpacing: 2, color: "#2D3748" }}>NO MATCHES SCHEDULED YET</div>
+                <div style={{ fontSize: 13, color: "#2D3748", marginTop: 6 }}>
+                  {isAdmin ? "Click \"+ Add Match\" to publish the first match." : "Check back closer to the tournament date."}
                 </div>
-                <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, fontWeight: 700, letterSpacing: 2, color: "#4A5568", border: "1px solid #1E2533", padding: "4px 10px" }}>{m.status}</span>
               </div>
-            ))}
+            ) : (
+              schedule.map((m) => {
+                const statusColor = { UPCOMING: "#4A5568", LIVE: "#F5A623", COMPLETED: "#86EFAC", CANCELLED: "#FC8181" }[m.status] || "#4A5568";
+                const statusBorder = { UPCOMING: "#1E2533", LIVE: "rgba(245,166,35,.4)", COMPLETED: "rgba(134,239,172,.2)", CANCELLED: "rgba(252,129,129,.2)" }[m.status] || "#1E2533";
+                return (
+                  <div key={m.id} style={{ background: "#111318", border: `1px solid ${statusBorder}`, padding: "16px", marginBottom: 10, position: "relative" }}>
+                    {m.status === "LIVE" && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg,transparent,#F5A623,transparent)" }} />}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 10 }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: "#4A5568", letterSpacing: 2, marginBottom: 4 }}>{m.phase}</div>
+                        <div className="heading" style={{ fontSize: 16, color: "#E2E8F0" }}>{m.date} · {m.time}</div>
+                        <div style={{ fontSize: 12, color: "#718096", marginTop: 2 }}>Map: {m.map}</div>
+                        {(m.roomId || m.roomPass) && (
+                          <div style={{ marginTop: 8, display: "flex", gap: 16, flexWrap: "wrap" }}>
+                            {m.roomId && <div style={{ fontSize: 12 }}><span style={{ color: "#4A5568" }}>Room ID: </span><span style={{ color: "#F5A623", fontWeight: 600 }}>{m.roomId}</span></div>}
+                            {m.roomPass && <div style={{ fontSize: 12 }}><span style={{ color: "#4A5568" }}>Password: </span><span style={{ color: "#F5A623", fontWeight: 600 }}>{m.roomPass}</span></div>}
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, fontWeight: 700, letterSpacing: 2, color: statusColor, border: `1px solid ${statusBorder}`, padding: "4px 10px" }}>{m.status}</span>
+                        <>
+                          <button onClick={() => schedAction("edit", m)} style={{ background: "none", border: "1px solid #1E2533", color: "#A0AEC0", padding: "4px 10px", cursor: "pointer", fontSize: 12, fontFamily: "'Barlow Condensed'", letterSpacing: 1 }}>✏ EDIT</button>
+                          <button onClick={() => schedAction("delete", m)} style={{ background: "none", border: "1px solid rgba(252,129,129,.3)", color: "#FC8181", padding: "4px 10px", cursor: "pointer", fontSize: 12, fontFamily: "'Barlow Condensed'", letterSpacing: 1 }}>🗑</button>
+                        </>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+
+            {/* Edit / Add Modal */}
+            {editingMatch && (
+              <ScheduleEditModal
+                match={editingMatch === "new" ? null : editingMatch}
+                saving={schedSaving}
+                error={schedError}
+                onSave={async (form) => {
+                  setSchedSaving(true); setSchedError("");
+                  try {
+                    if (editingMatch === "new") {
+                      const created = await apiAddSchedule(form);
+                      setSchedule(s => [...s, created]);
+                    } else {
+                      const updated = await apiUpdateSchedule(editingMatch.id, form);
+                      setSchedule(s => s.map(x => x.id === updated.id ? updated : x));
+                    }
+                    setEditingMatch(null);
+                  } catch (e) { setSchedError(e.message); }
+                  setSchedSaving(false);
+                }}
+                onClose={() => setEditingMatch(null)}
+              />
+            )}
+
+            {/* Admin password gate for schedule actions */}
+            {schedAdminPending && (
+              <ScheduleAdminGate
+                onSuccess={() => {
+                  setIsAdmin(true);
+                  const { action, match } = schedAdminPending;
+                  setSchedAdminPending(null);
+                  if (action === "add") { setEditingMatch("new"); setSchedError(""); }
+                  else if (action === "edit") { setEditingMatch(match); setSchedError(""); }
+                  else if (action === "delete") { handleSchedDelete(match); }
+                }}
+                onClose={() => setSchedAdminPending(null)}
+              />
+            )}
           </div>
         )}
 

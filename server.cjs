@@ -72,6 +72,63 @@ app.delete("/players", async (req, res) => {
   res.json({ message: "All players cleared" });
 });
 
+// ─── SCHEDULE ────────────────────────────────
+
+function formatMatch(data) {
+  return {
+    id: data.id,
+    phase: data.phase,
+    date: data.date,
+    time: data.time,
+    map: data.map,
+    status: data.status,
+    roomId: data.room_id,
+    roomPass: data.room_pass,
+    createdAt: data.created_at,
+  };
+}
+
+// GET /schedule
+app.get("/schedule", async (req, res) => {
+  const { data, error } = await supabase.from("schedule").select("*").order("created_at", { ascending: true });
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data.map(formatMatch));
+});
+
+// POST /schedule
+app.post("/schedule", async (req, res) => {
+  const { phase, date, time, map, status, roomId, roomPass } = req.body;
+  const { data, error } = await supabase
+    .from("schedule")
+    .insert([{ phase, date, time, map, status, room_id: roomId, room_pass: roomPass }])
+    .select()
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.status(201).json(formatMatch(data));
+});
+
+// PATCH /schedule/:id
+app.patch("/schedule/:id", async (req, res) => {
+  const { id } = req.params;
+  const { phase, date, time, map, status, roomId, roomPass } = req.body;
+  const { data, error } = await supabase
+    .from("schedule")
+    .update({ phase, date, time, map, status, room_id: roomId, room_pass: roomPass })
+    .eq("id", id)
+    .select()
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(formatMatch(data));
+});
+
+// DELETE /schedule/:id
+app.delete("/schedule/:id", async (req, res) => {
+  const { id } = req.params;
+  const { error } = await supabase.from("schedule").delete().eq("id", id);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ message: "Match deleted" });
+});
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`\n🎯 BATTLEGROUND SERVER`);
   console.log(`   Port: ${PORT}`);
