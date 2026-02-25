@@ -711,7 +711,7 @@ function AdminLoginModal({ onClose, onSuccess }) {
 // ─────────────────────────────────────────────
 // SCHEDULE EDIT MODAL
 // ─────────────────────────────────────────────
-const MAPS = ["Erangel", "Miramar", "Sanhok", "Vikendi", "Karakin", "Nusa", "Rondo"];
+const MAPS = ["Erangel", "Miramar", "Sanhok", "Vikendi", "Karakin", "Nusa", "Rondo", "Room"];
 const STATUSES = ["UPCOMING", "ROOM", "LIVE", "COMPLETED", "CANCELLED"];
 
 // ─────────────────────────────────────────────
@@ -798,13 +798,17 @@ function ScheduleEditModal({ match, saving, error, onSave, onClose }) {
           </div>
         </div>
 
-        <label className="field-label">Room ID</label>
-        <input className="field-input" placeholder="Optional" value={form.roomId}
-          onChange={e => f("roomId", e.target.value)} style={{ marginBottom: 10 }} />
+        {form.map === "Room" && (
+          <>
+            <label className="field-label">Room ID</label>
+            <input className="field-input" placeholder="Optional" value={form.roomId}
+              onChange={e => f("roomId", e.target.value)} style={{ marginBottom: 10 }} />
 
-        <label className="field-label">Room Password</label>
-        <input className="field-input" placeholder="Optional" value={form.roomPass}
-          onChange={e => f("roomPass", e.target.value)} style={{ marginBottom: 10 }} />
+            <label className="field-label">Room Password</label>
+            <input className="field-input" placeholder="Optional" value={form.roomPass}
+              onChange={e => f("roomPass", e.target.value)} style={{ marginBottom: 10 }} />
+          </>
+        )}
 
         {error && <div className="error-msg" style={{ marginBottom: 10 }}>⚠ {error}</div>}
 
