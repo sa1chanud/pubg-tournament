@@ -439,8 +439,22 @@ function LandingPage({ onEnter, onRegister, players, regOpen, deadline }) {
       </div>
 
       {/* Footer */}
-      <div style={{ borderTop: "1px solid #1E2533", padding: "16px", textAlign: "center" }}>
+      <div style={{ borderTop: "1px solid #1E2533", padding: "16px 16px 20px", textAlign: "center" }}>
         <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: "#2D3748", letterSpacing: 2 }}>BATTLEGROUND PUBG TOURNAMENT · 2026</span>
+        <div style={{ marginTop: 12, display: "flex", justifyContent: "center", gap: 16, flexWrap: "wrap" }}>
+          <a
+            href="mailto:saichandu.janga5@gmail.com?subject=Feedback%20%2F%20Suggestion%20-%20PUBG%20Tournament&body=Hi%2C%0A%0AI%20have%20the%20following%20feedback%20or%20suggestion%3A%0A%0A"
+            style={{ fontFamily: "'Barlow Condensed'", fontSize: 12, color: "#F5A623", letterSpacing: 1, textDecoration: "none", borderBottom: "1px solid #F5A62355", paddingBottom: 1 }}
+          >
+            💬 FEEDBACK / SUGGESTIONS
+          </a>
+          <a
+            href="mailto:saichandu.janga5@gmail.com?subject=Contact%20Admin%20-%20PUBG%20Tournament&body=Hi%20Admin%2C%0A%0A"
+            style={{ fontFamily: "'Barlow Condensed'", fontSize: 12, color: "#A0AEC0", letterSpacing: 1, textDecoration: "none", borderBottom: "1px solid #A0AEC055", paddingBottom: 1 }}
+          >
+            📧 CONTACT ADMIN
+          </a>
+        </div>
       </div>
     </div>
   );
