@@ -676,6 +676,56 @@ function AdminLoginModal({ onClose, onSuccess }) {
 }
 
 // ─────────────────────────────────────────────
+// GENERATE TEAMS MODAL (admin password gate)
+// ─────────────────────────────────────────────
+function GenTeamsModal({ players, preview, teamsReady, isAdmin, onConfirm, onClose }) {
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [authed, setAuthed] = useState(isAdmin);
+
+  const unlock = () => {
+    if (password === ADMIN_PASSWORD) { setAuthed(true); setError(""); }
+    else { setError("Incorrect password."); setPassword(""); }
+  };
+
+  return (
+    <div className="overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="confirm-sheet slide-up" style={{ border: "1.5px solid rgba(245,166,35,.3)" }}>
+        <div className="heading" style={{ fontSize: 16, color: "#F5A623", marginBottom: 8 }}>⚡ GENERATE TEAMS</div>
+
+        {!authed ? (
+          <>
+            <p style={{ fontSize: 13, color: "#4A5568", marginBottom: 18 }}>Enter admin password to generate teams.</p>
+            <input className="field-input" type="password" placeholder="Admin password" value={password} autoFocus
+              onChange={e => { setPassword(e.target.value); setError(""); }}
+              onKeyDown={e => e.key === "Enter" && unlock()} />
+            {error && <div className="error-msg">⚠ {error}</div>}
+            <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
+              <button className="btn-primary" style={{ flex: 1, padding: "12px" }} onClick={unlock}>UNLOCK</button>
+              <button className="btn-ghost" style={{ flex: 1, padding: "12px" }} onClick={onClose}>CANCEL</button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p style={{ fontSize: 13, color: "#718096", lineHeight: 1.7, marginBottom: 6 }}>
+              Randomly assign <strong style={{ color: "#E2E8F0" }}>{players.length} players</strong> into squads.
+            </p>
+            {preview && <p style={{ fontSize: 13, color: "#F5A623", marginBottom: 16 }}>
+              {preview.fours > 0 ? `${preview.fours} squad${preview.fours !== 1 ? "s" : ""} of 4` : ""}{preview.fours > 0 && preview.threes > 0 ? " + " : ""}{preview.threes > 0 ? `${preview.threes} squad${preview.threes !== 1 ? "s" : ""} of 3` : ""}
+            </p>}
+            {teamsReady && <p style={{ fontSize: 12, color: "#FC8181", marginBottom: 14 }}>⚠ This overwrites the current draw.</p>}
+            <div style={{ display: "flex", gap: 10 }}>
+              <button className="btn-primary" style={{ flex: 1, padding: "12px" }} onClick={onConfirm}>CONFIRM</button>
+              <button className="btn-ghost" style={{ flex: 1, padding: "12px" }} onClick={onClose}>CANCEL</button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
 // DASHBOARD
 // ─────────────────────────────────────────────
 function Dashboard({ players, setPlayers, regOpen, timeLeft, serverOnline }) {
@@ -948,22 +998,14 @@ function Dashboard({ players, setPlayers, regOpen, timeLeft, serverOnline }) {
       {showReg && <RegModal players={players} onClose={() => setShowReg(false)} onSuccess={p => { setPlayers(prev => [...prev, p]); setShowReg(false); }} />}
 
       {showGen && (
-        <div className="overlay" onClick={e => e.target === e.currentTarget && setShowGen(false)}>
-          <div className="confirm-sheet slide-up" style={{ border: "1.5px solid rgba(245,166,35,.3)" }}>
-            <div className="heading" style={{ fontSize: 16, color: "#F5A623", marginBottom: 8 }}>⚡ GENERATE TEAMS</div>
-            <p style={{ fontSize: 13, color: "#718096", lineHeight: 1.7, marginBottom: 6 }}>
-              Randomly assign <strong style={{ color: "#E2E8F0" }}>{players.length} players</strong> into squads.
-            </p>
-            {preview && <p style={{ fontSize: 13, color: "#F5A623", marginBottom: 16 }}>
-              {preview.fours > 0 ? `${preview.fours} squad${preview.fours !== 1 ? "s" : ""} of 4` : ""}{preview.fours > 0 && preview.threes > 0 ? " + " : ""}{preview.threes > 0 ? `${preview.threes} squad${preview.threes !== 1 ? "s" : ""} of 3` : ""}
-            </p>}
-            {teamsReady && <p style={{ fontSize: 12, color: "#FC8181", marginBottom: 14 }}>⚠ This overwrites the current draw.</p>}
-            <div style={{ display: "flex", gap: 10 }}>
-              <button className="btn-primary" style={{ flex: 1, padding: "12px" }} onClick={genTeams}>CONFIRM</button>
-              <button className="btn-ghost" style={{ flex: 1, padding: "12px" }} onClick={() => setShowGen(false)}>CANCEL</button>
-            </div>
-          </div>
-        </div>
+        <GenTeamsModal
+          players={players}
+          preview={preview}
+          teamsReady={teamsReady}
+          isAdmin={isAdmin}
+          onConfirm={() => { genTeams(); setIsAdmin(true); }}
+          onClose={() => setShowGen(false)}
+        />
       )}
 
       {showClear && (
