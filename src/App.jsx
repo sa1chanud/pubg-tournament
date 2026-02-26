@@ -945,19 +945,11 @@ function ScheduleEditModal({ match, saving, error, onSave, onClose }) {
               </div>
             </div>
 
-            <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
-              <div style={{ flex: 1 }}>
-                <label className="field-label">Map</label>
-                <select className="field-input" value={form.map} onChange={e => f("map", e.target.value)}>
-                  {MAPS.filter(m => m !== "Room").map(m => <option key={m} value={m}>{m}</option>)}
-                </select>
-              </div>
-              <div style={{ flex: 1 }}>
-                <label className="field-label">Status</label>
-                <select className="field-input" value={form.status} onChange={e => f("status", e.target.value)}>
-                  {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
-              </div>
+            <div style={{ marginBottom: 10 }}>
+              <label className="field-label">Status</label>
+              <select className="field-input" value={form.status} onChange={e => f("status", e.target.value)}>
+                {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
             </div>
 
             <label className="field-label">Room ID</label>
