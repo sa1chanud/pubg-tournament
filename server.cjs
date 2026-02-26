@@ -84,6 +84,9 @@ function formatMatch(data) {
     status: data.status,
     roomId: data.room_id,
     roomPass: data.room_pass,
+    matchType: data.match_type,
+    rounds: data.rounds,
+    playersPerTeam: data.players_per_team,
     createdAt: data.created_at,
   };
 }
@@ -97,10 +100,10 @@ app.get("/schedule", async (req, res) => {
 
 // POST /schedule
 app.post("/schedule", async (req, res) => {
-  const { phase, date, time, map, status, roomId, roomPass } = req.body;
+  const { phase, date, time, map, status, roomId, roomPass, matchType, rounds, playersPerTeam } = req.body;
   const { data, error } = await supabase
     .from("schedule")
-    .insert([{ phase, date, time, map, status, room_id: roomId, room_pass: roomPass }])
+    .insert([{ phase, date, time, map, status, room_id: roomId, room_pass: roomPass, match_type: matchType, rounds, players_per_team: playersPerTeam }])
     .select()
     .single();
   if (error) return res.status(500).json({ error: error.message });
@@ -110,10 +113,10 @@ app.post("/schedule", async (req, res) => {
 // PATCH /schedule/:id
 app.patch("/schedule/:id", async (req, res) => {
   const { id } = req.params;
-  const { phase, date, time, map, status, roomId, roomPass } = req.body;
+  const { phase, date, time, map, status, roomId, roomPass, matchType, rounds, playersPerTeam } = req.body;
   const { data, error } = await supabase
     .from("schedule")
-    .update({ phase, date, time, map, status, room_id: roomId, room_pass: roomPass })
+    .update({ phase, date, time, map, status, room_id: roomId, room_pass: roomPass, match_type: matchType, rounds, players_per_team: playersPerTeam })
     .eq("id", id)
     .select()
     .single();

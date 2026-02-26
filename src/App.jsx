@@ -747,7 +747,23 @@ function ScheduleAdminGate({ onSuccess, onClose }) {
 // ─────────────────────────────────────────────
 // SCHEDULE EDIT MODAL
 // ─────────────────────────────────────────────
+const MATCH_TYPES = [
+  { key: "1v1", label: "1 v 1", icon: "⚔️" },
+  { key: "2v2", label: "2 v 2", icon: "👥" },
+  { key: "3v3", label: "3 v 3", icon: "🔱" },
+  { key: "4v4", label: "4 v 4", icon: "🛡️" },
+  { key: "room", label: "Room", icon: "🏠" },
+];
+
 function ScheduleEditModal({ match, saving, error, onSave, onClose }) {
+  // When editing, infer matchType from saved data
+  const inferType = () => {
+    if (!match) return null;
+    if (match.matchType) return match.matchType;
+    return null;
+  };
+
+  const [matchType, setMatchType] = useState(inferType());
   const [form, setForm] = useState({
     phase: match?.phase || "",
     date: match?.date || "",
@@ -756,50 +772,142 @@ function ScheduleEditModal({ match, saving, error, onSave, onClose }) {
     status: match?.status || "UPCOMING",
     roomId: match?.roomId || "",
     roomPass: match?.roomPass || "",
+    rounds: match?.rounds || "1",
+    playersPerTeam: match?.playersPerTeam || "4",
+    matchType: match?.matchType || "",
   });
   const f = (k, v) => setForm(p => ({ ...p, [k]: v }));
 
+  const isRoom = matchType === "room";
+
   return (
     <div className="overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="confirm-sheet slide-up" style={{ border: "1.5px solid rgba(245,166,35,.3)", maxWidth: 420, width: "100%" }}>
-        <div className="heading" style={{ fontSize: 16, color: "#F5A623", marginBottom: 16 }}>
-          {match ? "✏ EDIT MATCH" : "＋ ADD MATCH"}
-        </div>
+      <div className="confirm-sheet slide-up" style={{ border: "1.5px solid rgba(245,166,35,.3)", maxWidth: 420, width: "100%", maxHeight: "90vh", overflowY: "auto" }}>
 
-        <label className="field-label">Phase / Round *</label>
-        <input className="field-input" placeholder="e.g. QUALIFIER, SEMI-FINAL" value={form.phase}
-          onChange={e => f("phase", e.target.value)} style={{ marginBottom: 10 }} />
-
-        <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
-          <div style={{ flex: 1 }}>
-            <label className="field-label">Date *</label>
-            <input className="field-input" placeholder="e.g. March 20, 2026" value={form.date}
-              onChange={e => f("date", e.target.value)} />
-          </div>
-          <div style={{ flex: 1 }}>
-            <label className="field-label">Time *</label>
-            <input className="field-input" placeholder="e.g. 18:00 UTC" value={form.time}
-              onChange={e => f("time", e.target.value)} />
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
+          {matchType && <button onClick={() => setMatchType(null)} style={{ background: "none", border: "none", color: "#A0AEC0", cursor: "pointer", fontSize: 18, padding: 0, lineHeight: 1 }}>←</button>}
+          <div className="heading" style={{ fontSize: 16, color: "#F5A623" }}>
+            {match ? "✏ EDIT MATCH" : "＋ ADD MATCH"}
+            {matchType && <span style={{ color: "#A0AEC0", fontWeight: 400, fontSize: 12, marginLeft: 8 }}>· {MATCH_TYPES.find(t => t.key === matchType)?.label}</span>}
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
-          <div style={{ flex: 1 }}>
-            <label className="field-label">Map</label>
-            <select className="field-input" value={form.map} onChange={e => f("map", e.target.value)}>
-              {MAPS.map(m => <option key={m} value={m}>{m}</option>)}
-            </select>
-          </div>
-          <div style={{ flex: 1 }}>
-            <label className="field-label">Status</label>
-            <select className="field-input" value={form.status} onChange={e => f("status", e.target.value)}>
-              {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-          </div>
-        </div>
-
-        {form.map === "Room" && (
+        {/* STEP 1 — Pick match type */}
+        {!matchType && (
           <>
+            <p style={{ fontSize: 12, color: "#4A5568", fontFamily: "'Barlow Condensed'", letterSpacing: 2, marginBottom: 14 }}>SELECT MATCH TYPE</p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              {MATCH_TYPES.map(t => (
+                <button key={t.key} onClick={() => { setMatchType(t.key); f("matchType", t.key); }}
+                  style={{ background: "#0B0C10", border: "1.5px solid #1E2533", borderRadius: 4, padding: "18px 10px", cursor: "pointer", textAlign: "center", transition: "border-color .2s" }}
+                  onMouseEnter={e => e.currentTarget.style.borderColor = "#F5A623"}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = "#1E2533"}>
+                  <div style={{ fontSize: 28, marginBottom: 6 }}>{t.icon}</div>
+                  <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 14, fontWeight: 700, letterSpacing: 2, color: "#E2E8F0" }}>{t.label}</div>
+                </button>
+              ))}
+            </div>
+            <button className="btn-ghost" style={{ width: "100%", marginTop: 14, padding: "11px" }} onClick={onClose}>CANCEL</button>
+          </>
+        )}
+
+        {/* STEP 2 — Standard match form (1v1 / 2v2 / 3v3 / 4v4) */}
+        {matchType && !isRoom && (
+          <>
+            <label className="field-label">Phase / Round *</label>
+            <input className="field-input" placeholder="e.g. QUALIFIER, SEMI-FINAL" value={form.phase}
+              onChange={e => f("phase", e.target.value)} style={{ marginBottom: 10 }} />
+
+            <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
+              <div style={{ flex: 1 }}>
+                <label className="field-label">Date *</label>
+                <input className="field-input" placeholder="e.g. March 20, 2026" value={form.date}
+                  onChange={e => f("date", e.target.value)} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label className="field-label">Time *</label>
+                <input className="field-input" placeholder="e.g. 18:00 UTC" value={form.time}
+                  onChange={e => f("time", e.target.value)} />
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
+              <div style={{ flex: 1 }}>
+                <label className="field-label">Map</label>
+                <select className="field-input" value={form.map} onChange={e => f("map", e.target.value)}>
+                  {MAPS.filter(m => m !== "Room").map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
+              </div>
+              <div style={{ flex: 1 }}>
+                <label className="field-label">Status</label>
+                <select className="field-input" value={form.status} onChange={e => f("status", e.target.value)}>
+                  {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+            </div>
+
+            {error && <div className="error-msg" style={{ marginBottom: 10 }}>⚠ {error}</div>}
+
+            <div style={{ display: "flex", gap: 10, marginTop: 6 }}>
+              <button className="btn-primary" style={{ flex: 1, padding: "12px" }}
+                disabled={saving || !form.phase.trim() || !form.date.trim() || !form.time.trim()}
+                onClick={() => onSave(form)}>
+                {saving ? "SAVING..." : "SAVE"}
+              </button>
+              <button className="btn-ghost" style={{ flex: 1, padding: "12px" }} onClick={onClose}>CANCEL</button>
+            </div>
+          </>
+        )}
+
+        {/* STEP 2 — Room match form */}
+        {matchType && isRoom && (
+          <>
+            <label className="field-label">Phase / Round *</label>
+            <input className="field-input" placeholder="e.g. QUALIFIER, SEMI-FINAL" value={form.phase}
+              onChange={e => f("phase", e.target.value)} style={{ marginBottom: 10 }} />
+
+            <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
+              <div style={{ flex: 1 }}>
+                <label className="field-label">Date *</label>
+                <input className="field-input" placeholder="e.g. March 20, 2026" value={form.date}
+                  onChange={e => f("date", e.target.value)} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label className="field-label">Time *</label>
+                <input className="field-input" placeholder="e.g. 18:00 UTC" value={form.time}
+                  onChange={e => f("time", e.target.value)} />
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
+              <div style={{ flex: 1 }}>
+                <label className="field-label">No. of Rounds</label>
+                <input className="field-input" type="number" min="1" max="20" placeholder="e.g. 3" value={form.rounds}
+                  onChange={e => f("rounds", e.target.value)} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label className="field-label">Players per Team</label>
+                <input className="field-input" type="number" min="1" max="4" placeholder="e.g. 4" value={form.playersPerTeam}
+                  onChange={e => f("playersPerTeam", e.target.value)} />
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
+              <div style={{ flex: 1 }}>
+                <label className="field-label">Map</label>
+                <select className="field-input" value={form.map} onChange={e => f("map", e.target.value)}>
+                  {MAPS.filter(m => m !== "Room").map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
+              </div>
+              <div style={{ flex: 1 }}>
+                <label className="field-label">Status</label>
+                <select className="field-input" value={form.status} onChange={e => f("status", e.target.value)}>
+                  {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+            </div>
+
             <label className="field-label">Room ID</label>
             <input className="field-input" placeholder="Optional" value={form.roomId}
               onChange={e => f("roomId", e.target.value)} style={{ marginBottom: 10 }} />
@@ -807,18 +915,20 @@ function ScheduleEditModal({ match, saving, error, onSave, onClose }) {
             <label className="field-label">Room Password</label>
             <input className="field-input" placeholder="Optional" value={form.roomPass}
               onChange={e => f("roomPass", e.target.value)} style={{ marginBottom: 10 }} />
+
+            {error && <div className="error-msg" style={{ marginBottom: 10 }}>⚠ {error}</div>}
+
+            <div style={{ display: "flex", gap: 10, marginTop: 6 }}>
+              <button className="btn-primary" style={{ flex: 1, padding: "12px" }}
+                disabled={saving || !form.phase.trim() || !form.date.trim() || !form.time.trim()}
+                onClick={() => onSave(form)}>
+                {saving ? "SAVING..." : "SAVE"}
+              </button>
+              <button className="btn-ghost" style={{ flex: 1, padding: "12px" }} onClick={onClose}>CANCEL</button>
+            </div>
           </>
         )}
 
-        {error && <div className="error-msg" style={{ marginBottom: 10 }}>⚠ {error}</div>}
-
-        <div style={{ display: "flex", gap: 10, marginTop: 6 }}>
-          <button className="btn-primary" style={{ flex: 1, padding: "12px" }} disabled={saving || !form.phase.trim() || !form.date.trim() || !form.time.trim()}
-            onClick={() => onSave(form)}>
-            {saving ? "SAVING..." : "SAVE"}
-          </button>
-          <button className="btn-ghost" style={{ flex: 1, padding: "12px" }} onClick={onClose}>CANCEL</button>
-        </div>
       </div>
     </div>
   );
@@ -1134,11 +1244,24 @@ function Dashboard({ players, setPlayers, regOpen, timeLeft, serverOnline }) {
                     {m.status === "LIVE" && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg,transparent,#F5A623,transparent)" }} />}
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 10 }}>
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: "#4A5568", letterSpacing: 2, marginBottom: 4 }}>{m.phase}</div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                          <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: "#4A5568", letterSpacing: 2 }}>{m.phase}</div>
+                          {m.matchType && (
+                            <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "#A78BFA", border: "1px solid rgba(167,139,250,.3)", padding: "1px 6px" }}>
+                              {m.matchType === "room" ? "🏠 ROOM" : m.matchType.toUpperCase()}
+                            </span>
+                          )}
+                        </div>
                         <div className="heading" style={{ fontSize: 16, color: "#E2E8F0" }}>{m.date} · {m.time}</div>
                         <div style={{ fontSize: 12, color: "#718096", marginTop: 2 }}>Map: {m.map}</div>
+                        {m.matchType === "room" && (m.rounds || m.playersPerTeam) && (
+                          <div style={{ marginTop: 6, display: "flex", gap: 16, flexWrap: "wrap" }}>
+                            {m.rounds && <div style={{ fontSize: 12 }}><span style={{ color: "#4A5568" }}>Rounds: </span><span style={{ color: "#E2E8F0", fontWeight: 600 }}>{m.rounds}</span></div>}
+                            {m.playersPerTeam && <div style={{ fontSize: 12 }}><span style={{ color: "#4A5568" }}>Players/Team: </span><span style={{ color: "#E2E8F0", fontWeight: 600 }}>{m.playersPerTeam}</span></div>}
+                          </div>
+                        )}
                         {(m.roomId || m.roomPass) && (
-                          <div style={{ marginTop: 8, display: "flex", gap: 16, flexWrap: "wrap" }}>
+                          <div style={{ marginTop: 6, display: "flex", gap: 16, flexWrap: "wrap" }}>
                             {m.roomId && <div style={{ fontSize: 12 }}><span style={{ color: "#4A5568" }}>Room ID: </span><span style={{ color: "#F5A623", fontWeight: 600 }}>{m.roomId}</span></div>}
                             {m.roomPass && <div style={{ fontSize: 12 }}><span style={{ color: "#4A5568" }}>Password: </span><span style={{ color: "#F5A623", fontWeight: 600 }}>{m.roomPass}</span></div>}
                           </div>
