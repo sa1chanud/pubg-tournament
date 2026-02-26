@@ -757,14 +757,20 @@ const MATCH_TYPES = [
 ];
 
 function ScheduleEditModal({ match, saving, error, onSave, onClose }) {
-  // When editing, infer matchType from saved data
   const inferType = () => {
     if (!match) return null;
     if (match.matchType) return match.matchType;
     return null;
   };
 
+  const inferWowSub = () => {
+    if (!match?.matchType) return null;
+    if (match.matchType.startsWith("wow-")) return match.matchType.replace("wow-", "");
+    return null;
+  };
+
   const [matchType, setMatchType] = useState(inferType());
+  const [wowSub, setWowSub] = useState(inferWowSub()); // null | "1v1"|"2v2"|"3v3"|"4v4"
   const [form, setForm] = useState({
     phase: match?.phase || "",
     date: match?.date || "",
@@ -780,6 +786,30 @@ function ScheduleEditModal({ match, saving, error, onSave, onClose }) {
   const f = (k, v) => setForm(p => ({ ...p, [k]: v }));
 
   const isRoom = matchType === "room";
+  const isWow = matchType === "wow";
+
+  // Label shown in header
+  const typeLabel = () => {
+    if (!matchType) return null;
+    if (isWow && wowSub) return `WOW · ${wowSub.toUpperCase()}`;
+    return MATCH_TYPES.find(t => t.key === matchType)?.label;
+  };
+
+  // Back button behaviour
+  const goBack = () => {
+    if (isWow && wowSub) { setWowSub(null); }
+    else { setMatchType(null); setWowSub(null); f("matchType", ""); }
+  };
+
+  // Show form when: non-wow type selected, OR wow + sub selected
+  const showForm = matchType && !isWow || (isWow && wowSub);
+
+  const WOW_SUBS = [
+    { key: "1v1", label: "1 v 1", icon: "⚔️" },
+    { key: "2v2", label: "2 v 2", icon: "👥" },
+    { key: "3v3", label: "3 v 3", icon: "🔱" },
+    { key: "4v4", label: "4 v 4", icon: "🛡️" },
+  ];
 
   return (
     <div className="overlay" onClick={e => e.target === e.currentTarget && onClose()}>
@@ -787,10 +817,10 @@ function ScheduleEditModal({ match, saving, error, onSave, onClose }) {
 
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
-          {matchType && <button onClick={() => setMatchType(null)} style={{ background: "none", border: "none", color: "#A0AEC0", cursor: "pointer", fontSize: 18, padding: 0, lineHeight: 1 }}>←</button>}
+          {(matchType) && <button onClick={goBack} style={{ background: "none", border: "none", color: "#A0AEC0", cursor: "pointer", fontSize: 18, padding: 0, lineHeight: 1 }}>←</button>}
           <div className="heading" style={{ fontSize: 16, color: "#F5A623" }}>
             {match ? "✏ EDIT MATCH" : "＋ ADD MATCH"}
-            {matchType && <span style={{ color: "#A0AEC0", fontWeight: 400, fontSize: 12, marginLeft: 8 }}>· {MATCH_TYPES.find(t => t.key === matchType)?.label}</span>}
+            {typeLabel() && <span style={{ color: "#A0AEC0", fontWeight: 400, fontSize: 12, marginLeft: 8 }}>· {typeLabel()}</span>}
           </div>
         </div>
 
@@ -813,8 +843,27 @@ function ScheduleEditModal({ match, saving, error, onSave, onClose }) {
           </>
         )}
 
-        {/* STEP 2 — Standard match form (1v1 / 2v2 / 3v3 / 4v4) */}
-        {matchType && !isRoom && (
+        {/* STEP 1b — WOW sub-type picker */}
+        {isWow && !wowSub && (
+          <>
+            <p style={{ fontSize: 12, color: "#4A5568", fontFamily: "'Barlow Condensed'", letterSpacing: 2, marginBottom: 14 }}>SELECT WOW FORMAT</p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              {WOW_SUBS.map(t => (
+                <button key={t.key} onClick={() => { setWowSub(t.key); f("matchType", `wow-${t.key}`); }}
+                  style={{ background: "#0B0C10", border: "1.5px solid #1E2533", borderRadius: 4, padding: "18px 10px", cursor: "pointer", textAlign: "center", transition: "border-color .2s" }}
+                  onMouseEnter={e => e.currentTarget.style.borderColor = "#F5A623"}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = "#1E2533"}>
+                  <div style={{ fontSize: 28, marginBottom: 6 }}>{t.icon}</div>
+                  <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 14, fontWeight: 700, letterSpacing: 2, color: "#E2E8F0" }}>{t.label}</div>
+                </button>
+              ))}
+            </div>
+            <button className="btn-ghost" style={{ width: "100%", marginTop: 14, padding: "11px" }} onClick={onClose}>CANCEL</button>
+          </>
+        )}
+
+        {/* STEP 2 — Standard match form (1v1 / 2v2 / 3v3 / 4v4 / wow-*) */}
+        {showForm && !isRoom && (
           <>
             <label className="field-label">Phase / Round *</label>
             <input className="field-input" placeholder="e.g. QUALIFIER, SEMI-FINAL" value={form.phase}
@@ -834,12 +883,14 @@ function ScheduleEditModal({ match, saving, error, onSave, onClose }) {
             </div>
 
             <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
-              <div style={{ flex: 1 }}>
-                <label className="field-label">Map</label>
-                <select className="field-input" value={form.map} onChange={e => f("map", e.target.value)}>
-                  {MAPS.filter(m => m !== "Room").map(m => <option key={m} value={m}>{m}</option>)}
-                </select>
-              </div>
+              {!isWow && (
+                <div style={{ flex: 1 }}>
+                  <label className="field-label">Map</label>
+                  <select className="field-input" value={form.map} onChange={e => f("map", e.target.value)}>
+                    {MAPS.filter(m => m !== "Room").map(m => <option key={m} value={m}>{m}</option>)}
+                  </select>
+                </div>
+              )}
               <div style={{ flex: 1 }}>
                 <label className="field-label">Status</label>
                 <select className="field-input" value={form.status} onChange={e => f("status", e.target.value)}>
@@ -1247,9 +1298,11 @@ function Dashboard({ players, setPlayers, regOpen, timeLeft, serverOnline }) {
                       <div style={{ flex: 1 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
                           <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: "#4A5568", letterSpacing: 2 }}>{m.phase}</div>
-                          {m.matchType && (
+                        {m.matchType && (
                             <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "#A78BFA", border: "1px solid rgba(167,139,250,.3)", padding: "1px 6px" }}>
-                              {m.matchType === "room" ? "🏠 ROOM" : m.matchType.toUpperCase()}
+                              {m.matchType === "room" ? "🏠 ROOM"
+                                : m.matchType.startsWith("wow-") ? `🌟 WOW · ${m.matchType.replace("wow-", "").toUpperCase()}`
+                                : m.matchType.toUpperCase()}
                             </span>
                           )}
                         </div>
