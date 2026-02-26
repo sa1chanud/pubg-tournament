@@ -1689,7 +1689,7 @@ export default function App() {
   if (!dbLoaded) return (
     <>
       <style>{STYLES}</style>
-      <div style={{ minHeight: "100vh", background: "#0B0C10", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
+      <div style={{ width: "100vw", minHeight: "100vh", background: "#0B0C10", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
         <div style={{ width: 40, height: 40, background: "#F5A623", clipPath: "polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🎯</div>
         <div className="spinner" style={{ width: 24, height: 24 }} />
         <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: "#4A5568", letterSpacing: 4 }}>LOADING...</div>
