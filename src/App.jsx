@@ -1227,7 +1227,19 @@ function Dashboard({ players, setPlayers, regOpen, timeLeft, serverOnline }) {
   const expColor = { beginner: "#86EFAC", intermediate: "#FCD34D", advanced: "#FB923C", pro: "#FC8181" };
   const expBg = { beginner: "#0D2A10", intermediate: "#2A2010", advanced: "#2A1A0D", pro: "#2A0D0D" };
 
-  const liveCount = schedule.filter(m => m.status === "LIVE").length;
+  const liveCount = schedule.filter(m => {
+    if (m.status === "COMPLETED" || m.status === "CANCELLED") return false;
+    if (m.status === "LIVE") return true;
+    try {
+      const raw = `${m.date} ${m.time}`.replace(/IST/i, "+0530").replace(/UTC/i, "UTC");
+      const d = new Date(raw);
+      if (!isNaN(d)) {
+        const now = new Date();
+        return now >= d && now <= new Date(d.getTime() + 3 * 60 * 60 * 1000);
+      }
+    } catch {}
+    return false;
+  }).length;
 
   const tabs = [
     { key: "players", label: "Players", count: players.length },
@@ -1497,8 +1509,40 @@ function Dashboard({ players, setPlayers, regOpen, timeLeft, serverOnline }) {
 
         {/* ── LIVE TAB ── */}
         {tab === "live" && (() => {
-          const liveMatches = schedule.filter(m => m.status === "LIVE");
-          const upcomingMatches = schedule.filter(m => m.status === "UPCOMING").slice(0, 3);
+          // Auto-detect live: status is LIVE, OR scheduled date+time has arrived and not COMPLETED/CANCELLED
+          const now = new Date();
+
+          const parseMatchTime = (m) => {
+            try {
+              // Try combining date + time into a parseable string
+              // e.g. "March 20, 2026" + "18:00 UTC" → "March 20, 2026 18:00 UTC"
+              const raw = `${m.date} ${m.time}`.replace(/IST/i, "+0530").replace(/UTC/i, "UTC");
+              const d = new Date(raw);
+              if (!isNaN(d)) return d;
+              // fallback: just parse date
+              const d2 = new Date(m.date);
+              if (!isNaN(d2)) return d2;
+            } catch {}
+            return null;
+          };
+
+          const isAutoLive = (m) => {
+            if (m.status === "COMPLETED" || m.status === "CANCELLED") return false;
+            if (m.status === "LIVE") return true;
+            const matchTime = parseMatchTime(m);
+            if (!matchTime) return false;
+            // Show as live from scheduled time until 3 hours after
+            const threeHoursLater = new Date(matchTime.getTime() + 3 * 60 * 60 * 1000);
+            return now >= matchTime && now <= threeHoursLater;
+          };
+
+          const liveMatches = schedule.filter(isAutoLive);
+          const upcomingMatches = schedule.filter(m => {
+            if (m.status === "COMPLETED" || m.status === "CANCELLED" || isAutoLive(m)) return false;
+            const matchTime = parseMatchTime(m);
+            if (matchTime && matchTime > now) return true;
+            return m.status === "UPCOMING";
+          }).slice(0, 3);
 
           return (
             <div className="slide-up">
