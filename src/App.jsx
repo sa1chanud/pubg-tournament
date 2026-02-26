@@ -240,6 +240,7 @@ const STYLES = `
   .tab-bar {
     display: flex; overflow-x: auto; border-bottom: 1px solid #1E2533;
     scrollbar-width: none; -ms-overflow-style: none;
+    justify-content: center; max-width: 900px; margin: 0 auto;
   }
   .tab-bar::-webkit-scrollbar { display: none; }
   .tab-item {
@@ -1201,7 +1202,7 @@ function Dashboard({ players, setPlayers, regOpen, timeLeft, serverOnline }) {
     <div style={{ minHeight: "100vh", background: "#0B0C10" }}>
       {/* Sticky header */}
       <div className="sticky-header">
-        <div style={{ padding: "0 16px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 52 }}>
+        <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 16px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 52 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div style={{ width: 24, height: 24, background: "#F5A623", clipPath: "polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11 }}>🎯</div>
             <span className="heading" style={{ fontSize: 15, color: "#F5A623", letterSpacing: 3 }}>BATTLEGROUND</span>
@@ -1455,45 +1456,103 @@ function Dashboard({ players, setPlayers, regOpen, timeLeft, serverOnline }) {
         )}
 
         {/* ── LIVE TAB ── */}
-        {tab === "live" && (
-          <div className="slide-up">
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-              <div className="heading" style={{ fontSize: 22, color: "#E2E8F0" }}>Live Matches</div>
-              <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, fontWeight: 700, letterSpacing: 2, color: "#FC8181", border: "1px solid rgba(252,129,129,.3)", padding: "2px 8px" }}>LIVE</span>
-            </div>
+        {tab === "live" && (() => {
+          const liveMatches = schedule.filter(m => m.status === "LIVE");
+          const upcomingMatches = schedule.filter(m => m.status === "UPCOMING").slice(0, 3);
 
-            {[
-              { map: "Erangel", phase: "Zone 5", alive: 12, time: "32:14", status: "LIVE" },
-              { map: "Miramar", phase: "Ended", alive: 0, time: "45:22", status: "ENDED" },
-            ].map((m, i) => (
-              <div key={i} style={{ background: "#111318", border: `1px solid ${m.status === "LIVE" ? "rgba(245,166,35,.3)" : "#1E2533"}`, padding: "16px", marginBottom: 10, position: "relative", overflow: "hidden" }}>
-                {m.status === "LIVE" && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg,transparent,#F5A623,transparent)" }} />}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-                  <div className="heading" style={{ fontSize: 18, color: "#E2E8F0" }}>{m.map}</div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                    {m.status === "LIVE" && <span className="live-dot pulse-anim" />}
-                    <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, fontWeight: 700, letterSpacing: 2, color: m.status === "LIVE" ? "#FC8181" : "#4A5568" }}>{m.status}</span>
-                  </div>
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>
-                  {[["ALIVE", m.alive, m.status === "LIVE" ? "#F5A623" : "#4A5568"], ["PHASE", m.phase, "#718096"], ["TIME", m.time, "#A0AEC0"]].map(([lbl, val, col]) => (
-                    <div key={lbl} style={{ background: "#0B0C10", padding: "10px 8px", textAlign: "center" }}>
-                      <div className="heading" style={{ fontSize: 18, color: col }}>{val}</div>
-                      <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 9, color: "#4A5568", letterSpacing: 2, marginTop: 3 }}>{lbl}</div>
+          return (
+            <div className="slide-up">
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+                <div className="heading" style={{ fontSize: 22, color: "#E2E8F0" }}>Live Matches</div>
+                {liveMatches.length > 0 && <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, fontWeight: 700, letterSpacing: 2, color: "#FC8181", border: "1px solid rgba(252,129,129,.3)", padding: "2px 8px" }}>● LIVE {liveMatches.length}</span>}
+              </div>
+
+              {schedLoading ? (
+                <div style={{ textAlign: "center", padding: "40px 0", color: "#4A5568", fontFamily: "'Barlow Condensed'", letterSpacing: 2 }}>LOADING...</div>
+              ) : liveMatches.length > 0 ? (
+                <>
+                  {liveMatches.map(m => (
+                    <div key={m.id} style={{ background: "#111318", border: "1px solid rgba(245,166,35,.4)", padding: "16px", marginBottom: 12, position: "relative", overflow: "hidden" }}>
+                      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg,transparent,#F5A623,transparent)" }} />
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
+                        <div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                            <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: "#4A5568", letterSpacing: 2 }}>{m.phase}</div>
+                            {m.matchType && (
+                              <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "#A78BFA", border: "1px solid rgba(167,139,250,.3)", padding: "1px 6px" }}>
+                                {m.matchType === "room" ? "🏠 ROOM" : m.matchType.startsWith("wow-") ? `🌟 WOW · ${m.matchType.replace("wow-", "").toUpperCase()}` : m.matchType.toUpperCase()}
+                              </span>
+                            )}
+                          </div>
+                          <div className="heading" style={{ fontSize: 18, color: "#E2E8F0" }}>{m.date} · {m.time}</div>
+                          {m.map && <div style={{ fontSize: 12, color: "#718096", marginTop: 2 }}>Map: {m.map}</div>}
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <span className="live-dot pulse-anim" />
+                          <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, fontWeight: 700, letterSpacing: 2, color: "#FC8181" }}>LIVE</span>
+                        </div>
+                      </div>
+                      {/* Scores */}
+                      {m.scores && (() => {
+                        try {
+                          const rows = JSON.parse(m.scores);
+                          return (
+                            <div style={{ borderTop: "1px solid #1E2533", paddingTop: 12 }}>
+                              {rows.map((row, ri) => (
+                                <div key={ri} style={{ marginBottom: ri < rows.length - 1 ? 10 : 0 }}>
+                                  {row.round && <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 9, color: "#4A5568", letterSpacing: 2, marginBottom: 6 }}>ROUND {row.round}</div>}
+                                  <div style={{ display: "flex", alignItems: "center", gap: 10, background: "#0B0C10", padding: "12px 14px" }}>
+                                    <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: row.team1.score > row.team2.score ? "#F5A623" : "#E2E8F0" }}>{row.team1.name}</span>
+                                    <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 28, fontWeight: 800, color: row.team1.score > row.team2.score ? "#F5A623" : "#E2E8F0", minWidth: 30, textAlign: "center" }}>{row.team1.score || 0}</span>
+                                    <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 14, color: "#4A5568", padding: "0 4px" }}>:</span>
+                                    <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 28, fontWeight: 800, color: row.team2.score > row.team1.score ? "#F5A623" : "#E2E8F0", minWidth: 30, textAlign: "center" }}>{row.team2.score || 0}</span>
+                                    <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: row.team2.score > row.team1.score ? "#F5A623" : "#E2E8F0", textAlign: "right" }}>{row.team2.name}</span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        } catch { return null; }
+                      })()}
                     </div>
                   ))}
-                </div>
-              </div>
-            ))}
+                </>
+              ) : (
+                <>
+                  {/* No live matches — show message + upcoming */}
+                  <div className="empty-box" style={{ marginBottom: upcomingMatches.length > 0 ? 24 : 0 }}>
+                    <div style={{ fontSize: 40, marginBottom: 12 }}>📡</div>
+                    <div className="heading" style={{ fontSize: 14, letterSpacing: 2, color: "#2D3748" }}>NO MATCHES LIVE RIGHT NOW</div>
+                    <div style={{ fontSize: 13, color: "#2D3748", marginTop: 6 }}>Check back when a match is in progress.</div>
+                  </div>
 
-            <div style={{ background: "#111318", border: "1px solid #1E2533", padding: "20px 16px", marginTop: 20, textAlign: "center" }}>
-              <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: "#4A5568", letterSpacing: 3 }}>NEXT MATCH</div>
-              <div className="heading" style={{ fontSize: 24, color: "#F5A623", margin: "8px 0 4px" }}>GRAND FINAL</div>
-              <div style={{ fontSize: 13, color: "#718096" }}>Top 2 Squads · Erangel</div>
-              <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 12, color: "#4A5568", letterSpacing: 2, marginTop: 8 }}>MARCH 25, 2026 · 18:00 UTC</div>
+                  {upcomingMatches.length > 0 && (
+                    <>
+                      <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: "#4A5568", letterSpacing: 3, marginBottom: 12 }}>UPCOMING MATCHES</div>
+                      {upcomingMatches.map(m => (
+                        <div key={m.id} style={{ background: "#111318", border: "1px solid #1E2533", padding: "14px 16px", marginBottom: 10, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+                          <div>
+                            <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: "#4A5568", letterSpacing: 2, marginBottom: 3 }}>{m.phase}</div>
+                            <div className="heading" style={{ fontSize: 15, color: "#E2E8F0" }}>{m.date} · {m.time}</div>
+                            {m.map && <div style={{ fontSize: 12, color: "#718096", marginTop: 2 }}>Map: {m.map}</div>}
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            {m.matchType && (
+                              <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, fontWeight: 700, color: "#A78BFA", border: "1px solid rgba(167,139,250,.3)", padding: "2px 8px" }}>
+                                {m.matchType === "room" ? "🏠 ROOM" : m.matchType.startsWith("wow-") ? `🌟 WOW · ${m.matchType.replace("wow-", "").toUpperCase()}` : m.matchType.toUpperCase()}
+                              </span>
+                            )}
+                            <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, fontWeight: 700, color: "#4A5568", border: "1px solid #1E2533", padding: "2px 8px" }}>UPCOMING</span>
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </>
+              )}
             </div>
-          </div>
-        )}
+          );
+        })()}
       </div>
 
       {/* Modals */}
