@@ -882,6 +882,7 @@ function ScheduleEditModal({ match, saving, error, onSave, onClose }) {
     rounds: match?.rounds || "1",
     playersPerTeam: match?.playersPerTeam || "4",
     matchType: match?.matchType || "",
+    streamUrl: match?.streamUrl || "",
   });
   const f = (k, v) => setForm(p => ({ ...p, [k]: v }));
 
@@ -1001,6 +1002,10 @@ function ScheduleEditModal({ match, saving, error, onSave, onClose }) {
 
             {error && <div className="error-msg" style={{ marginBottom: 10 }}>⚠ {error}</div>}
 
+            <label className="field-label" style={{ marginBottom: 4 }}>🎥 Stream URL <span style={{ color: "#4A5568", fontWeight: 400 }}>(YouTube / Twitch)</span></label>
+            <input className="field-input" placeholder="https://youtube.com/watch?v=... or https://twitch.tv/..." value={form.streamUrl}
+              onChange={e => f("streamUrl", e.target.value)} style={{ marginBottom: 14 }} />
+
             <div style={{ display: "flex", gap: 10, marginTop: 6 }}>
               <button className="btn-primary" style={{ flex: 1, padding: "12px" }}
                 disabled={saving || !form.phase.trim() || !form.date.trim() || !form.time.trim()}
@@ -1059,6 +1064,10 @@ function ScheduleEditModal({ match, saving, error, onSave, onClose }) {
             <label className="field-label">Room Password</label>
             <input className="field-input" placeholder="Optional" value={form.roomPass}
               onChange={e => f("roomPass", e.target.value)} style={{ marginBottom: 10 }} />
+
+            <label className="field-label" style={{ marginBottom: 4 }}>🎥 Stream URL <span style={{ color: "#4A5568", fontWeight: 400 }}>(YouTube / Twitch)</span></label>
+            <input className="field-input" placeholder="https://youtube.com/watch?v=... or https://twitch.tv/..." value={form.streamUrl}
+              onChange={e => f("streamUrl", e.target.value)} style={{ marginBottom: 14 }} />
 
             {error && <div className="error-msg" style={{ marginBottom: 10 }}>⚠ {error}</div>}
 
@@ -1126,6 +1135,20 @@ function GenTeamsModal({ players, preview, teamsReady, isAdmin, onConfirm, onClo
       </div>
     </div>
   );
+}
+
+// Convert YouTube / Twitch watch URLs to embeddable iframes
+function getEmbedUrl(url) {
+  if (!url) return null;
+  try {
+    // YouTube: watch?v=ID or youtu.be/ID or live/ID
+    const yt = url.match(/(?:youtube\.com\/(?:watch\?v=|live\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+    if (yt) return `https://www.youtube.com/embed/${yt[1]}?autoplay=0&rel=0`;
+    // Twitch channel: twitch.tv/CHANNEL
+    const tw = url.match(/twitch\.tv\/([A-Za-z0-9_]+)/);
+    if (tw) return `https://player.twitch.tv/?channel=${tw[1]}&parent=${window.location.hostname}&autoplay=false`;
+  } catch {}
+  return null;
 }
 
 // ─────────────────────────────────────────────
@@ -1522,6 +1545,48 @@ function Dashboard({ players, setPlayers, regOpen, timeLeft, serverOnline }) {
                           <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, fontWeight: 700, letterSpacing: 2, color: "#FC8181" }}>LIVE</span>
                         </div>
                       </div>
+                      {/* Stream embed */}
+                      {m.streamUrl && getEmbedUrl(m.streamUrl) ? (
+                        <div style={{ marginBottom: 12 }}>
+                          <div style={{ position: "relative", paddingTop: "56.25%", background: "#000", borderRadius: 4, overflow: "hidden" }}>
+                            <iframe
+                              src={getEmbedUrl(m.streamUrl)}
+                              style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: "none" }}
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
+                              title={`Stream: ${m.phase}`}
+                            />
+                            {/* Fallback shown behind iframe if stream hasn't started */}
+                            <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, background: "#0B0C10", zIndex: -1 }}>
+                              <div style={{ fontSize: 32 }}>📡</div>
+                              <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 12, color: "#4A5568", letterSpacing: 2 }}>STREAM STARTING SOON...</div>
+                              <a href={m.streamUrl} target="_blank" rel="noopener noreferrer"
+                                style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: "#F5A623", letterSpacing: 1, textDecoration: "none", border: "1px solid rgba(245,166,35,.3)", padding: "6px 14px" }}>
+                                OPEN ON YOUTUBE / TWITCH ↗
+                              </a>
+                            </div>
+                          </div>
+                          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 6 }}>
+                            <a href={m.streamUrl} target="_blank" rel="noopener noreferrer"
+                              style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: "#4A5568", letterSpacing: 1, textDecoration: "none" }}>
+                              ↗ Open in browser
+                            </a>
+                          </div>
+                        </div>
+                      ) : m.streamUrl ? (
+                        <div style={{ marginBottom: 12 }}>
+                          <a href={m.streamUrl} target="_blank" rel="noopener noreferrer"
+                            style={{ fontFamily: "'Barlow Condensed'", fontSize: 12, color: "#F5A623", letterSpacing: 1, textDecoration: "none", border: "1px solid rgba(245,166,35,.3)", padding: "6px 12px", display: "inline-block" }}>
+                            🎥 WATCH STREAM ↗
+                          </a>
+                        </div>
+                      ) : (
+                        <div style={{ marginBottom: 12, background: "#0B0C10", border: "1px dashed #1E2533", padding: "20px", textAlign: "center" }}>
+                          <div style={{ fontSize: 24, marginBottom: 6 }}>📡</div>
+                          <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: "#2D3748", letterSpacing: 2 }}>NO STREAM AVAILABLE</div>
+                          <div style={{ fontSize: 12, color: "#2D3748", marginTop: 4 }}>Stream link not added yet. Check back soon.</div>
+                        </div>
+                      )}
                       {/* Scores */}
                       {m.scores && (() => {
                         try {
