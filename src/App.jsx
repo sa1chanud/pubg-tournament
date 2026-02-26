@@ -715,6 +715,105 @@ const MAPS = ["Erangel", "Miramar", "Sanhok", "Vikendi", "Karakin", "Nusa", "Ron
 const STATUSES = ["UPCOMING", "LIVE", "COMPLETED", "CANCELLED"];
 
 // ─────────────────────────────────────────────
+// SCORE MODAL
+// ─────────────────────────────────────────────
+function ScoreModal({ match, isAdmin, onSave, onClose }) {
+  const [authed, setAuthed] = useState(isAdmin);
+  const [password, setPassword] = useState("");
+  const [pwError, setPwError] = useState("");
+
+  // Build initial team rows: for room → rounds × 2 teams; for others → 2 teams
+  const buildRows = () => {
+    if (match.scores) {
+      try { return JSON.parse(match.scores); } catch {}
+    }
+    const isRoom = match.matchType === "room";
+    const rounds = isRoom ? parseInt(match.rounds || 1) : 1;
+    return Array.from({ length: rounds }, (_, i) => ({
+      round: isRoom ? i + 1 : null,
+      team1: { name: "Team 1", score: "" },
+      team2: { name: "Team 2", score: "" },
+    }));
+  };
+
+  const [rows, setRows] = useState(buildRows);
+  const [saving, setSaving] = useState(false);
+
+  const updateRow = (ri, side, field, val) => {
+    setRows(prev => prev.map((r, i) => i !== ri ? r : { ...r, [side]: { ...r[side], [field]: val } }));
+  };
+
+  const unlock = () => {
+    if (password === ADMIN_PASSWORD) { setAuthed(true); setPwError(""); }
+    else { setPwError("Incorrect password."); setPassword(""); }
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    await onSave(JSON.stringify(rows));
+    setSaving(false);
+  };
+
+  return (
+    <div className="overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="confirm-sheet slide-up" style={{ border: "1.5px solid rgba(245,166,35,.3)", maxWidth: 440, width: "100%", maxHeight: "90vh", overflowY: "auto" }}>
+        <div className="heading" style={{ fontSize: 16, color: "#F5A623", marginBottom: 6 }}>🏆 ENTER SCORES</div>
+        <div style={{ fontSize: 12, color: "#4A5568", fontFamily: "'Barlow Condensed'", letterSpacing: 1, marginBottom: 18 }}>{match.phase} · {match.date}</div>
+
+        {!authed ? (
+          <>
+            <p style={{ fontSize: 13, color: "#4A5568", marginBottom: 18 }}>Enter admin password to update scores.</p>
+            <input className="field-input" type="password" placeholder="Admin password" value={password} autoFocus
+              onChange={e => { setPassword(e.target.value); setPwError(""); }}
+              onKeyDown={e => e.key === "Enter" && unlock()} />
+            {pwError && <div className="error-msg">⚠ {pwError}</div>}
+            <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
+              <button className="btn-primary" style={{ flex: 1, padding: "12px" }} onClick={unlock}>UNLOCK</button>
+              <button className="btn-ghost" style={{ flex: 1, padding: "12px" }} onClick={onClose}>CANCEL</button>
+            </div>
+          </>
+        ) : (
+          <>
+            {rows.map((row, ri) => (
+              <div key={ri} style={{ marginBottom: 14, background: "#0B0C10", border: "1px solid #1E2533", padding: "12px", borderRadius: 4 }}>
+                {row.round && (
+                  <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: "#4A5568", letterSpacing: 2, marginBottom: 10 }}>ROUND {row.round}</div>
+                )}
+                <div style={{ display: "flex", gap: 10, alignItems: "flex-end" }}>
+                  <div style={{ flex: 1 }}>
+                    <label className="field-label">Team 1 Name</label>
+                    <input className="field-input" value={row.team1.name}
+                      onChange={e => updateRow(ri, "team1", "name", e.target.value)} style={{ marginBottom: 6 }} />
+                    <label className="field-label">Score</label>
+                    <input className="field-input" type="number" min="0" placeholder="0" value={row.team1.score}
+                      onChange={e => updateRow(ri, "team1", "score", e.target.value)} />
+                  </div>
+                  <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 20, color: "#4A5568", fontWeight: 700, paddingBottom: 8 }}>VS</div>
+                  <div style={{ flex: 1 }}>
+                    <label className="field-label">Team 2 Name</label>
+                    <input className="field-input" value={row.team2.name}
+                      onChange={e => updateRow(ri, "team2", "name", e.target.value)} style={{ marginBottom: 6 }} />
+                    <label className="field-label">Score</label>
+                    <input className="field-input" type="number" min="0" placeholder="0" value={row.team2.score}
+                      onChange={e => updateRow(ri, "team2", "score", e.target.value)} />
+                  </div>
+                </div>
+              </div>
+            ))}
+            <div style={{ display: "flex", gap: 10, marginTop: 6 }}>
+              <button className="btn-primary" style={{ flex: 1, padding: "12px" }} onClick={handleSave} disabled={saving}>
+                {saving ? "SAVING..." : "SAVE SCORES"}
+              </button>
+              <button className="btn-ghost" style={{ flex: 1, padding: "12px" }} onClick={onClose}>CANCEL</button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
 // SCHEDULE ADMIN GATE MODAL
 // ─────────────────────────────────────────────
 function ScheduleAdminGate({ onSuccess, onClose }) {
@@ -1049,6 +1148,7 @@ function Dashboard({ players, setPlayers, regOpen, timeLeft, serverOnline }) {
   const [schedSaving, setSchedSaving] = useState(false);
   const [schedError, setSchedError] = useState("");
   const [schedAdminPending, setSchedAdminPending] = useState(null); // null | { action: "add"|"edit"|"delete", match? }
+  const [scoreMatch, setScoreMatch] = useState(null);
 
   useEffect(() => {
     if (tab === "schedule") {
@@ -1070,6 +1170,7 @@ function Dashboard({ players, setPlayers, regOpen, timeLeft, serverOnline }) {
       if (action === "add") { setEditingMatch("new"); setSchedError(""); }
       else if (action === "edit") { setEditingMatch(match); setSchedError(""); }
       else if (action === "delete") { handleSchedDelete(match); }
+      else if (action === "score") { setScoreMatch(match); }
     } else {
       setSchedAdminPending({ action, match });
     }
@@ -1312,10 +1413,33 @@ function Dashboard({ players, setPlayers, regOpen, timeLeft, serverOnline }) {
                             {m.roomPass && <div style={{ fontSize: 12 }}><span style={{ color: "#4A5568" }}>Password: </span><span style={{ color: "#F5A623", fontWeight: 600 }}>{m.roomPass}</span></div>}
                           </div>
                         )}
+                        {/* Score display */}
+                        {m.scores && (() => {
+                          try {
+                            const rows = JSON.parse(m.scores);
+                            return (
+                              <div style={{ marginTop: 10, borderTop: "1px solid #1E2533", paddingTop: 10 }}>
+                                {rows.map((row, ri) => (
+                                  <div key={ri} style={{ marginBottom: ri < rows.length - 1 ? 8 : 0 }}>
+                                    {row.round && <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 9, color: "#4A5568", letterSpacing: 2, marginBottom: 4 }}>ROUND {row.round}</div>}
+                                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                      <span style={{ fontSize: 13, color: "#E2E8F0", flex: 1, fontWeight: 600 }}>{row.team1.name}</span>
+                                      <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 18, fontWeight: 800, color: row.team1.score > row.team2.score ? "#F5A623" : "#E2E8F0", minWidth: 24, textAlign: "center" }}>{row.team1.score || 0}</span>
+                                      <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: "#4A5568" }}>:</span>
+                                      <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 18, fontWeight: 800, color: row.team2.score > row.team1.score ? "#F5A623" : "#E2E8F0", minWidth: 24, textAlign: "center" }}>{row.team2.score || 0}</span>
+                                      <span style={{ fontSize: 13, color: "#E2E8F0", flex: 1, textAlign: "right", fontWeight: 600 }}>{row.team2.name}</span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            );
+                          } catch { return null; }
+                        })()}
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, fontWeight: 700, letterSpacing: 2, color: statusColor, border: `1px solid ${statusBorder}`, padding: "4px 10px" }}>{m.status}</span>
                         <>
+                          <button onClick={() => schedAction("score", m)} style={{ background: "none", border: "1px solid rgba(245,166,35,.3)", color: "#F5A623", padding: "4px 10px", cursor: "pointer", fontSize: 12, fontFamily: "'Barlow Condensed'", letterSpacing: 1 }}>🏆 SCORE</button>
                           <button onClick={() => schedAction("edit", m)} style={{ background: "none", border: "1px solid #1E2533", color: "#A0AEC0", padding: "4px 10px", cursor: "pointer", fontSize: 12, fontFamily: "'Barlow Condensed'", letterSpacing: 1 }}>✏ EDIT</button>
                           <button onClick={() => schedAction("delete", m)} style={{ background: "none", border: "1px solid rgba(252,129,129,.3)", color: "#FC8181", padding: "4px 10px", cursor: "pointer", fontSize: 12, fontFamily: "'Barlow Condensed'", letterSpacing: 1 }}>🗑</button>
                         </>
@@ -1437,8 +1561,22 @@ function Dashboard({ players, setPlayers, regOpen, timeLeft, serverOnline }) {
             if (action === "add") { setEditingMatch("new"); setSchedError(""); }
             else if (action === "edit") { setEditingMatch(match); setSchedError(""); }
             else if (action === "delete") { handleSchedDelete(match); }
+            else if (action === "score") { setScoreMatch(match); }
           }}
           onClose={() => setSchedAdminPending(null)}
+        />
+      )}
+
+      {scoreMatch && (
+        <ScoreModal
+          match={scoreMatch}
+          isAdmin={isAdmin}
+          onSave={async (scores) => {
+            const updated = await apiUpdateSchedule(scoreMatch.id, { ...scoreMatch, scores });
+            setSchedule(s => s.map(x => x.id === updated.id ? updated : x));
+            setScoreMatch(null);
+          }}
+          onClose={() => setScoreMatch(null)}
         />
       )}
 
