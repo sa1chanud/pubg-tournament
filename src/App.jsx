@@ -712,7 +712,7 @@ function AdminLoginModal({ onClose, onSuccess }) {
 // SCHEDULE EDIT MODAL
 // ─────────────────────────────────────────────
 const MAPS = ["Erangel", "Miramar", "Sanhok", "Vikendi", "Karakin", "Nusa", "Rondo", "Room"];
-const STATUSES = ["UPCOMING", "ROOM", "LIVE", "COMPLETED", "CANCELLED"];
+const STATUSES = ["UPCOMING", "LIVE", "COMPLETED", "CANCELLED"];
 
 // ─────────────────────────────────────────────
 // SCHEDULE ADMIN GATE MODAL
@@ -752,6 +752,7 @@ const MATCH_TYPES = [
   { key: "2v2", label: "2 v 2", icon: "👥" },
   { key: "3v3", label: "3 v 3", icon: "🔱" },
   { key: "4v4", label: "4 v 4", icon: "🛡️" },
+  { key: "wow", label: "WOW", icon: "🌟" },
   { key: "room", label: "Room", icon: "🏠" },
 ];
 
@@ -1237,8 +1238,8 @@ function Dashboard({ players, setPlayers, regOpen, timeLeft, serverOnline }) {
               </div>
             ) : (
               schedule.map((m) => {
-                const statusColor = { UPCOMING: "#4A5568", ROOM: "#A78BFA", LIVE: "#F5A623", COMPLETED: "#86EFAC", CANCELLED: "#FC8181" }[m.status] || "#4A5568";
-                const statusBorder = { UPCOMING: "#1E2533", ROOM: "rgba(167,139,250,.3)", LIVE: "rgba(245,166,35,.4)", COMPLETED: "rgba(134,239,172,.2)", CANCELLED: "rgba(252,129,129,.2)" }[m.status] || "#1E2533";
+                const statusColor = { UPCOMING: "#4A5568", LIVE: "#F5A623", COMPLETED: "#86EFAC", CANCELLED: "#FC8181" }[m.status] || "#4A5568";
+                const statusBorder = { UPCOMING: "#1E2533", LIVE: "rgba(245,166,35,.4)", COMPLETED: "rgba(134,239,172,.2)", CANCELLED: "rgba(252,129,129,.2)" }[m.status] || "#1E2533";
                 return (
                   <div key={m.id} style={{ background: "#111318", border: `1px solid ${statusBorder}`, padding: "16px", marginBottom: 10, position: "relative" }}>
                     {m.status === "LIVE" && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg,transparent,#F5A623,transparent)" }} />}
