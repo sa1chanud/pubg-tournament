@@ -1150,12 +1150,25 @@ function Dashboard({ players, setPlayers, regOpen, timeLeft, serverOnline }) {
   const [schedError, setSchedError] = useState("");
   const [schedAdminPending, setSchedAdminPending] = useState(null); // null | { action: "add"|"edit"|"delete", match? }
   const [scoreMatch, setScoreMatch] = useState(null);
+  const [liveLastUpdated, setLiveLastUpdated] = useState(null);
+
+  const loadSchedule = (silent = false) => {
+    if (!silent) setSchedLoading(true);
+    return apiLoadSchedule()
+      .then(data => { setSchedule(data); setSchedLoading(false); setLiveLastUpdated(new Date()); })
+      .catch(() => setSchedLoading(false));
+  };
 
   useEffect(() => {
-    if (tab === "schedule") {
-      setSchedLoading(true);
-      apiLoadSchedule().then(data => { setSchedule(data); setSchedLoading(false); }).catch(() => setSchedLoading(false));
-    }
+    if (tab === "schedule" || tab === "live") loadSchedule();
+  }, [tab]);
+
+  // Auto-refresh every 10s when on live tab, 30s on schedule tab
+  useEffect(() => {
+    if (tab !== "live" && tab !== "schedule") return;
+    const interval = tab === "live" ? 10000 : 30000;
+    const id = setInterval(() => loadSchedule(true), interval);
+    return () => clearInterval(id);
   }, [tab]);
 
   const preview = getPreview(players.length);
@@ -1191,11 +1204,13 @@ function Dashboard({ players, setPlayers, regOpen, timeLeft, serverOnline }) {
   const expColor = { beginner: "#86EFAC", intermediate: "#FCD34D", advanced: "#FB923C", pro: "#FC8181" };
   const expBg = { beginner: "#0D2A10", intermediate: "#2A2010", advanced: "#2A1A0D", pro: "#2A0D0D" };
 
+  const liveCount = schedule.filter(m => m.status === "LIVE").length;
+
   const tabs = [
     { key: "players", label: "Players", count: players.length },
     { key: "teams", label: "Teams", count: teamsReady ? teams.length : null },
     { key: "schedule", label: "Schedule" },
-    { key: "live", label: "Live" },
+    { key: "live", label: "Live", liveCount },
   ];
 
   return (
@@ -1223,7 +1238,9 @@ function Dashboard({ players, setPlayers, regOpen, timeLeft, serverOnline }) {
         <div className="tab-bar">
           {tabs.map(t => (
             <button key={t.key} className={`tab-item ${tab === t.key ? "active" : ""}`} onClick={() => setTab(t.key)}>
-              {t.label}{t.count != null && <span style={{ marginLeft: 5, color: "#F5A623", fontSize: 10 }}>{t.count}</span>}
+              {t.label}
+              {t.count != null && <span style={{ marginLeft: 5, color: "#F5A623", fontSize: 10 }}>{t.count}</span>}
+              {t.liveCount > 0 && <span style={{ marginLeft: 5, display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: "#FC8181", animation: "pulse-anim 1.5s ease-in-out infinite", verticalAlign: "middle" }} />}
             </button>
           ))}
         </div>
@@ -1462,9 +1479,22 @@ function Dashboard({ players, setPlayers, regOpen, timeLeft, serverOnline }) {
 
           return (
             <div className="slide-up">
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-                <div className="heading" style={{ fontSize: 22, color: "#E2E8F0" }}>Live Matches</div>
-                {liveMatches.length > 0 && <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, fontWeight: 700, letterSpacing: 2, color: "#FC8181", border: "1px solid rgba(252,129,129,.3)", padding: "2px 8px" }}>● LIVE {liveMatches.length}</span>}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div className="heading" style={{ fontSize: 22, color: "#E2E8F0" }}>Live Matches</div>
+                  {liveMatches.length > 0 && <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, fontWeight: 700, letterSpacing: 2, color: "#FC8181", border: "1px solid rgba(252,129,129,.3)", padding: "2px 8px" }}>● LIVE {liveMatches.length}</span>}
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  {liveLastUpdated && (
+                    <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: "#4A5568", letterSpacing: 1 }}>
+                      Updated {liveLastUpdated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                    </span>
+                  )}
+                  <button onClick={() => loadSchedule(true)} style={{ background: "none", border: "1px solid #1E2533", color: "#A0AEC0", padding: "4px 10px", cursor: "pointer", fontSize: 11, fontFamily: "'Barlow Condensed'", letterSpacing: 1 }}>
+                    {schedLoading ? "⟳ REFRESHING..." : "⟳ REFRESH"}
+                  </button>
+                  <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: "#2D3748", letterSpacing: 1 }}>AUTO · 10s</span>
+                </div>
               </div>
 
               {schedLoading ? (
