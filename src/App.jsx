@@ -1152,6 +1152,99 @@ function getEmbedUrl(url) {
 }
 
 // ─────────────────────────────────────────────
+// STREAM GUIDE
+// ─────────────────────────────────────────────
+function StreamGuide() {
+  const [open, setOpen] = useState(false);
+  const [platform, setPlatform] = useState("youtube");
+
+  const Step = ({ n, text, sub }) => (
+    <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
+      <div style={{ width: 22, height: 22, borderRadius: "50%", background: "#F5A623", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, color: "#0B0C10", flexShrink: 0, marginTop: 1 }}>{n}</div>
+      <div>
+        <div style={{ fontSize: 13, color: "#E2E8F0", fontWeight: 600 }}>{text}</div>
+        {sub && <div style={{ fontSize: 12, color: "#718096", marginTop: 2 }}>{sub}</div>}
+      </div>
+    </div>
+  );
+
+  const Note = ({ icon, text }) => (
+    <div style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 8 }}>
+      <span style={{ fontSize: 14 }}>{icon}</span>
+      <span style={{ fontSize: 12, color: "#718096" }}>{text}</span>
+    </div>
+  );
+
+  return (
+    <div style={{ marginTop: 24, border: "1px solid #1E2533", background: "#111318" }}>
+      <button onClick={() => setOpen(o => !o)} style={{ width: "100%", background: "none", border: "none", cursor: "pointer", padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 12, color: "#4A5568", letterSpacing: 2 }}>🎥 HOW TO STREAM YOUR MATCH</span>
+        <span style={{ color: "#4A5568", fontSize: 16 }}>{open ? "▲" : "▼"}</span>
+      </button>
+
+      {open && (
+        <div style={{ padding: "0 16px 20px" }}>
+          <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+            {[["youtube", "▶ YouTube"], ["twitch", "🟣 Twitch"]].map(([key, label]) => (
+              <button key={key} onClick={() => setPlatform(key)}
+                style={{ flex: 1, padding: "8px", fontFamily: "'Barlow Condensed'", fontSize: 12, letterSpacing: 1, fontWeight: 700, cursor: "pointer", border: "1px solid", borderColor: platform === key ? "#F5A623" : "#1E2533", background: platform === key ? "rgba(245,166,35,.1)" : "none", color: platform === key ? "#F5A623" : "#4A5568" }}>
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {platform === "youtube" && (
+            <>
+              <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: "#4A5568", letterSpacing: 3, marginBottom: 14 }}>STEP 1 — GO LIVE ON YOUTUBE</div>
+              <Step n="1" text="Open the YouTube app on your phone" />
+              <Step n="2" text='Tap the ➕ Create button → "Go Live"' />
+              <Step n="3" text='Select "Screen Share"' sub="Not Camera — Screen Share captures your game" />
+              <Step n="4" text='Set a title e.g. "PUBG Tournament - Match 1"' />
+              <Step n="5" text='Tap "Go Live" → tap "Start Now" to allow screen recording' />
+              <Step n="6" text="Open PUBG — YouTube is now streaming your screen" />
+              <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: "#4A5568", letterSpacing: 3, margin: "18px 0 14px" }}>STEP 2 — GET YOUR STREAM LINK</div>
+              <Step n="7" text="While live, tap your profile → YouTube Studio" />
+              <Step n="8" text="Copy the URL from your browser" sub="Looks like: youtube.com/watch?v=ABC123" />
+              <Step n="9" text="In this app → Schedule → Edit match → paste URL in 🎥 Stream URL → Save" />
+              <div style={{ borderTop: "1px solid #1E2533", paddingTop: 14, marginTop: 6 }}>
+                <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: "#4A5568", letterSpacing: 3, marginBottom: 10 }}>⚠ IMPORTANT NOTES</div>
+                <Note icon="⚠️" text="YouTube requires 1,000 subscribers to go live on mobile. If you don't have 1,000 subscribers, use Twitch instead — no minimum required." />
+                <Note icon="🔋" text="Keep your phone plugged in — streaming drains battery fast." />
+                <Note icon="📶" text="Use WiFi, not mobile data, for a stable stream." />
+                <Note icon="💡" text="On PC? Use OBS Studio (free) → Game Capture → select PUBG → stream to YouTube." />
+              </div>
+            </>
+          )}
+
+          {platform === "twitch" && (
+            <>
+              <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: "#4A5568", letterSpacing: 3, marginBottom: 14 }}>STEP 1 — GO LIVE ON TWITCH</div>
+              <Step n="1" text="Download the Twitch app on your phone" sub="Available on iOS and Android — free" />
+              <Step n="2" text="Create a free account at twitch.tv" />
+              <Step n="3" text="Tap your profile picture → Go Live" />
+              <Step n="4" text='Select "Screen Share"' sub="This captures your full phone screen including PUBG" />
+              <Step n="5" text='Set a title e.g. "PUBG Tournament - Match 1" → tap Go Live' />
+              <Step n="6" text="Open PUBG — Twitch is now streaming your screen" />
+              <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: "#4A5568", letterSpacing: 3, margin: "18px 0 14px" }}>STEP 2 — GET YOUR STREAM LINK</div>
+              <Step n="7" text="Your Twitch channel URL is always:" sub="twitch.tv/yourusername" />
+              <Step n="8" text="In this app → Schedule → Edit match → paste URL in 🎥 Stream URL → Save" sub="e.g. https://twitch.tv/chandudev" />
+              <div style={{ borderTop: "1px solid #1E2533", paddingTop: 14, marginTop: 6 }}>
+                <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: "#4A5568", letterSpacing: 3, marginBottom: 10 }}>✅ WHY TWITCH IS EASIER</div>
+                <Note icon="✅" text="No subscriber minimum — anyone can go live immediately." />
+                <Note icon="⚡" text="Lower latency than YouTube (~2-5 seconds delay vs 30 seconds)." />
+                <Note icon="🎮" text="Built for gaming — great community and discovery for tournaments." />
+                <Note icon="🔋" text="Keep your phone plugged in — streaming drains battery fast." />
+                <Note icon="📶" text="Use WiFi, not mobile data, for a stable stream." />
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
 // DASHBOARD
 // ─────────────────────────────────────────────
 function Dashboard({ players, setPlayers, regOpen, timeLeft, serverOnline }) {
@@ -1691,98 +1784,10 @@ function Dashboard({ players, setPlayers, regOpen, timeLeft, serverOnline }) {
               )}
 
               {/* ── HOW TO STREAM GUIDE ── */}
-              {(() => {
-                const [open, setOpen] = React.useState(false);
-                const [platform, setPlatform] = React.useState("youtube");
-                const Step = ({ n, text, sub }) => (
-                  <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
-                    <div style={{ width: 22, height: 22, borderRadius: "50%", background: "#F5A623", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, color: "#0B0C10", flexShrink: 0, marginTop: 1 }}>{n}</div>
-                    <div>
-                      <div style={{ fontSize: 13, color: "#E2E8F0", fontWeight: 600 }}>{text}</div>
-                      {sub && <div style={{ fontSize: 12, color: "#718096", marginTop: 2 }}>{sub}</div>}
-                    </div>
-                  </div>
-                );
-                const Note = ({ icon, text }) => (
-                  <div style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 8 }}>
-                    <span style={{ fontSize: 14 }}>{icon}</span>
-                    <span style={{ fontSize: 12, color: "#718096" }}>{text}</span>
-                  </div>
-                );
-                return (
-                  <div style={{ marginTop: 24, border: "1px solid #1E2533", background: "#111318" }}>
-                    <button onClick={() => setOpen(o => !o)} style={{ width: "100%", background: "none", border: "none", cursor: "pointer", padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 12, color: "#4A5568", letterSpacing: 2 }}>🎥 HOW TO STREAM YOUR MATCH</span>
-                      <span style={{ color: "#4A5568", fontSize: 16 }}>{open ? "▲" : "▼"}</span>
-                    </button>
-
-                    {open && (
-                      <div style={{ padding: "0 16px 20px" }}>
-
-                        {/* Platform toggle */}
-                        <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
-                          {[["youtube", "▶ YouTube"], ["twitch", "🟣 Twitch"]].map(([key, label]) => (
-                            <button key={key} onClick={() => setPlatform(key)}
-                              style={{ flex: 1, padding: "8px", fontFamily: "'Barlow Condensed'", fontSize: 12, letterSpacing: 1, fontWeight: 700, cursor: "pointer", border: "1px solid", borderColor: platform === key ? "#F5A623" : "#1E2533", background: platform === key ? "rgba(245,166,35,.1)" : "none", color: platform === key ? "#F5A623" : "#4A5568" }}>
-                              {label}
-                            </button>
-                          ))}
-                        </div>
-
-                        {platform === "youtube" && (
-                          <>
-                            <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: "#4A5568", letterSpacing: 3, marginBottom: 14 }}>STEP 1 — GO LIVE ON YOUTUBE</div>
-                            <Step n="1" text="Open the YouTube app on your phone" />
-                            <Step n="2" text='Tap the ➕ Create button → "Go Live"' />
-                            <Step n="3" text='Select "Screen Share"' sub="Not Camera — Screen Share captures your game" />
-                            <Step n="4" text='Set a title e.g. "PUBG Tournament - Match 1"' />
-                            <Step n="5" text='Tap "Go Live" → tap "Start Now" to allow screen recording' />
-                            <Step n="6" text="Open PUBG — YouTube is now streaming your screen" />
-
-                            <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: "#4A5568", letterSpacing: 3, margin: "18px 0 14px" }}>STEP 2 — GET YOUR STREAM LINK</div>
-                            <Step n="7" text="While live, tap your profile → YouTube Studio" />
-                            <Step n="8" text="Copy the URL from your browser" sub='Looks like: youtube.com/watch?v=ABC123' />
-                            <Step n="9" text="In this app → Schedule → Edit match → paste URL in 🎥 Stream URL → Save" />
-
-                            <div style={{ borderTop: "1px solid #1E2533", paddingTop: 14, marginTop: 6 }}>
-                              <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: "#4A5568", letterSpacing: 3, marginBottom: 10 }}>⚠ IMPORTANT NOTES</div>
-                              <Note icon="⚠️" text="YouTube requires 1,000 subscribers to go live on mobile. If you don't have 1,000 subscribers, use Twitch instead — no minimum required." />
-                              <Note icon="🔋" text="Keep your phone plugged in — streaming drains battery fast." />
-                              <Note icon="📶" text="Use WiFi, not mobile data, for a stable stream." />
-                              <Note icon="💡" text="On PC? Use OBS Studio (free) → Game Capture → select PUBG → stream to YouTube." />
-                            </div>
-                          </>
-                        )}
-
-                        {platform === "twitch" && (
-                          <>
-                            <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: "#4A5568", letterSpacing: 3, marginBottom: 14 }}>STEP 1 — GO LIVE ON TWITCH</div>
-                            <Step n="1" text="Download the Twitch app on your phone" sub="Available on iOS and Android — free" />
-                            <Step n="2" text="Create a free account at twitch.tv" />
-                            <Step n="3" text="Tap your profile picture → Go Live" />
-                            <Step n="4" text='Select "Screen Share"' sub="This captures your full phone screen including PUBG" />
-                            <Step n="5" text='Set a title e.g. "PUBG Tournament - Match 1" → tap Go Live' />
-                            <Step n="6" text="Open PUBG — Twitch is now streaming your screen" />
-
-                            <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: "#4A5568", letterSpacing: 3, margin: "18px 0 14px" }}>STEP 2 — GET YOUR STREAM LINK</div>
-                            <Step n="7" text="Your Twitch channel URL is always:" sub="twitch.tv/yourusername" />
-                            <Step n="8" text="In this app → Schedule → Edit match → paste URL in 🎥 Stream URL → Save" sub='e.g. https://twitch.tv/chandudev' />
-
-                            <div style={{ borderTop: "1px solid #1E2533", paddingTop: 14, marginTop: 6 }}>
-                              <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: "#4A5568", letterSpacing: 3, marginBottom: 10 }}>✅ WHY TWITCH IS EASIER</div>
-                              <Note icon="✅" text="No subscriber minimum — anyone can go live immediately." />
-                              <Note icon="⚡" text="Lower latency than YouTube (~2-5 seconds delay vs 30 seconds)." />
-                              <Note icon="🎮" text="Built for gaming — great community and discovery for tournaments." />
-                              <Note icon="🔋" text="Keep your phone plugged in — streaming drains battery fast." />
-                              <Note icon="📶" text="Use WiFi, not mobile data, for a stable stream." />
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
+              <StreamGuide />
+            </div>
+          );
+        })()}
       </div>
 
       {/* Modals */}
