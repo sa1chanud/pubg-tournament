@@ -1156,7 +1156,7 @@ function getEmbedUrl(url) {
 // ─────────────────────────────────────────────
 function StreamGuide() {
   const [open, setOpen] = useState(false);
-  const [platform, setPlatform] = useState("youtube");
+  const [platform, setPlatform] = useState("twitch");
 
   const Step = ({ n, text, sub }) => (
     <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
@@ -1185,7 +1185,7 @@ function StreamGuide() {
       {open && (
         <div style={{ padding: "0 16px 20px" }}>
           <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
-            {[["youtube", "▶ YouTube"], ["twitch", "🟣 Twitch"]].map(([key, label]) => (
+            {[["twitch", "🟣 Twitch  ✅ Recommended"], ["youtube", "▶ YouTube"]].map(([key, label]) => (
               <button key={key} onClick={() => setPlatform(key)}
                 style={{ flex: 1, padding: "8px", fontFamily: "'Barlow Condensed'", fontSize: 12, letterSpacing: 1, fontWeight: 700, cursor: "pointer", border: "1px solid", borderColor: platform === key ? "#F5A623" : "#1E2533", background: platform === key ? "rgba(245,166,35,.1)" : "none", color: platform === key ? "#F5A623" : "#4A5568" }}>
                 {label}
@@ -1195,6 +1195,10 @@ function StreamGuide() {
 
           {platform === "youtube" && (
             <>
+              <div style={{ background: "rgba(252,129,129,.08)", border: "1px solid rgba(252,129,129,.2)", padding: "12px 14px", marginBottom: 16 }}>
+                <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: "#FC8181", letterSpacing: 2, marginBottom: 4 }}>⚠ REQUIREMENTS BEFORE YOU START</div>
+                <div style={{ fontSize: 12, color: "#718096", lineHeight: 1.6 }}>YouTube requires: a channel, phone verification, and a <strong style={{ color: "#E2E8F0" }}>24-hour waiting period</strong> before you can go live. If you don't have a channel yet, use <button onClick={() => setPlatform("twitch")} style={{ background: "none", border: "none", color: "#F5A623", cursor: "pointer", fontSize: 12, padding: 0, textDecoration: "underline" }}>Twitch instead</button> — it works immediately.</div>
+              </div>
               <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: "#4A5568", letterSpacing: 3, marginBottom: 14 }}>STEP 1 — GO LIVE ON YOUTUBE</div>
               <Step n="1" text="Open the YouTube app on your phone" />
               <Step n="2" text='Tap the ➕ Create button → "Go Live"' />
