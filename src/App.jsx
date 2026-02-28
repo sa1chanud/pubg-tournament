@@ -1305,9 +1305,16 @@ function Dashboard({ players, setPlayers, regOpen, timeLeft, serverOnline }) {
       else if (action === "edit") { setEditingMatch(match); setSchedError(""); }
       else if (action === "delete") { handleSchedDelete(match); }
       else if (action === "score") { setScoreMatch(match); }
+      else if (action === "end") { handleEndMatch(match); }
     } else {
       setSchedAdminPending({ action, match });
     }
+  };
+
+  const handleEndMatch = async (match) => {
+    if (!confirm("Mark this match as COMPLETED?")) return;
+    const updated = await apiUpdateSchedule(match.id, { ...match, status: "COMPLETED" });
+    setSchedule(s => s.map(x => x.id === updated.id ? updated : x));
   };
 
   const handleSchedDelete = async (match) => {
@@ -1681,7 +1688,13 @@ function Dashboard({ players, setPlayers, regOpen, timeLeft, serverOnline }) {
                           <div className="heading" style={{ fontSize: 18, color: "#E2E8F0" }}>{m.date} · {m.time}</div>
                           {m.map && <div style={{ fontSize: 12, color: "#718096", marginTop: 2 }}>Map: {m.map}</div>}
                         </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          {isAdmin && (
+                            <button onClick={() => schedAction("end", m)}
+                              style={{ background: "none", border: "1px solid rgba(134,239,172,.3)", color: "#86EFAC", padding: "4px 10px", cursor: "pointer", fontSize: 11, fontFamily: "'Barlow Condensed'", letterSpacing: 1 }}>
+                              🏁 END MATCH
+                            </button>
+                          )}
                           <span className="live-dot pulse-anim" />
                           <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, fontWeight: 700, letterSpacing: 2, color: "#FC8181" }}>LIVE</span>
                         </div>
@@ -1860,6 +1873,7 @@ function Dashboard({ players, setPlayers, regOpen, timeLeft, serverOnline }) {
             else if (action === "edit") { setEditingMatch(match); setSchedError(""); }
             else if (action === "delete") { handleSchedDelete(match); }
             else if (action === "score") { setScoreMatch(match); }
+            else if (action === "end") { handleEndMatch(match); }
           }}
           onClose={() => setSchedAdminPending(null)}
         />
